@@ -1,12 +1,3 @@
-/*
- * @Author: ELEGOO
- * @Date: 2019-10-22 11:59:09
- * @LastEditTime: 2020-06-30 10:34:30
- * @LastEditors: Changhua
- * @Description: MPU6050 Data solution
- * @FilePath: 
- */
-
 #include "I2Cdev.h"
 #include "MPU6050.h"
 #include "Wire.h"

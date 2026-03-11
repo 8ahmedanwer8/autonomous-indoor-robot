@@ -1,11 +1,3 @@
-/*
- * @Author: ELEGOO
- * @Date: 2019-10-22 11:59:09
- * @LastEditTime: 2020-06-12 17:22:13
- * @LastEditors: Changhua
- * @Description: MPU6050 Data solution
- * @FilePath: 
- */
 #ifndef _MPU6050_getdata_H_
 #define _MPU6050_getdata_H_
 #include <Arduino.h>

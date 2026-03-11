@@ -1,11 +1,3 @@
-/*
- * @Author: ELEGOO
- * @Date: 2019-10-22 11:59:09
- * @LastEditTime: 2020-12-29 16:02:26
- * @LastEditors: Changhua
- * @Description: Smart Robot Car V4.0
- * @FilePath: 
- */
 #ifndef _DeviceDriverSet_xxx0_H_
 #define _DeviceDriverSet_xxx0_H_
 
@@ -119,40 +111,8 @@ public:
 #define control_enable true
 #define control_disable false
 };
-/*ULTRASONIC*/
 
-//#include <NewPing.h>
-class DeviceDriverSet_ULTRASONIC
-{
-public:
-  void DeviceDriverSet_ULTRASONIC_Init(void);
-#if _Test_DeviceDriverSet
-  void DeviceDriverSet_ULTRASONIC_Test(void);
-#endif
-  void DeviceDriverSet_ULTRASONIC_Get(uint16_t *ULTRASONIC_Get /*out*/);
 
-private:
-#define TRIG_PIN 13      // Arduino pin tied to trigger pin on the ultrasonic sensor.
-#define ECHO_PIN 12      // Arduino pin tied to echo pin on the ultrasonic sensor.
-#define MAX_DISTANCE 200 // Maximum distance we want to ping for (in centimeters). Maximum sensor distance is rated at 400-500cm.
-};
-/*Servo*/
-#include <Servo.h>
-class DeviceDriverSet_Servo
-{
-public:
-  void DeviceDriverSet_Servo_Init(unsigned int Position_angle);
-#if _Test_DeviceDriverSet
-  void DeviceDriverSet_Servo_Test(void);
-#endif
-  void DeviceDriverSet_Servo_control(unsigned int Position_angle);
-  void DeviceDriverSet_Servo_controls(uint8_t Servo, unsigned int Position_angle);
-
-private:
-#define PIN_Servo_z 10
-#define PIN_Servo_y 11
-};
-/*IRrecv*/
 #include "IRremote.h"
 class DeviceDriverSet_IRrecv
 {
