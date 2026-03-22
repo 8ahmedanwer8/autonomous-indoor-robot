@@ -15,8 +15,22 @@
 
   <!-- Realsense driver -->
   <include file="$(find realsense2_camera)/launch/rs_camera.launch">
-    <!-- Optional: if you need to override base frame name, you can set params here -->
-    <!-- <arg name="camera" default="camera" /> -->
+    <arg name="align_depth" value="true" />
+    <arg name="enable_sync" value="true" />
+
+    <arg name="color_width"  value="424" />
+    <arg name="color_height" value="240" />
+    <arg name="color_fps"    value="15" />
+
+    <arg name="depth_width"  value="424" />
+    <arg name="depth_height" value="240" />
+    <arg name="depth_fps"    value="15" />
+
+    <arg name="enable_pointcloud" value="false" />
+    <arg name="enable_infra1" value="false" />
+    <arg name="enable_infra2" value="false" />
   </include>
+
+
 
 </launch>
