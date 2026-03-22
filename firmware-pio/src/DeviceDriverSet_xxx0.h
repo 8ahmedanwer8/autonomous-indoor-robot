@@ -17,7 +17,6 @@ public:
 
 public:
 private:
-#define PIN_RBGLED 4
 #define NUM_LEDS 1
 public:
   CRGB leds[NUM_LEDS];

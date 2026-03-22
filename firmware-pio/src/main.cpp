@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include "DeviceDriverSet_xxx0.h"
-// #include <pinch
+#include "IMU.h"
 #include "odometry.h"
 
 #define BAUD 115200
@@ -15,17 +15,24 @@ enum Mode : uint8_t
 
 static Mode g_mode = MODE_STANDBY;
 static uint32_t lastCmdMs = 0;
+static uint8_t lastIrBtn = 0;
+static uint32_t lastIrBtnMs = 0;
 
 uint8_t g_speed = 130;
 
 DeviceDriverSet_Motor Motor;
 DeviceDriverSet_IRrecv AppIRrecv;
 
+static bool isMotionButton(uint8_t b)
+{
+  return b >= 1 && b <= 5;
+}
+
 // ---- Motor helpers ----
 static void motorsStop()
 {
-  Motor.DeviceDriverSet_Motor_control(direction_void, 0,
-                                      direction_void, 0, control_enable);
+  Motor.DeviceDriverSet_Motor_control(direction_back, 0,
+                                      direction_back, 0, control_disable);
 }
 
 static void motorsForward(uint8_t spd)
@@ -34,24 +41,27 @@ static void motorsForward(uint8_t spd)
   Motor.DeviceDriverSet_Motor_control(direction_just, spd,
                                       direction_just, spd, control_enable);
 }
+
 static void motorsBackward(uint8_t spd)
 {
   setCommandSigns(-1, -1);
   Motor.DeviceDriverSet_Motor_control(direction_back, spd,
                                       direction_back, spd, control_enable);
 }
+
 static void motorsLeft(uint8_t spd)
 {
   setCommandSigns(-1, +1);
-  Motor.DeviceDriverSet_Motor_control(direction_back, spd, // A
-                                      direction_just, spd, // B
+  Motor.DeviceDriverSet_Motor_control(direction_back, spd, // A = Right
+                                      direction_just, spd, // B = Left
                                       control_enable);
 }
+
 static void motorsRight(uint8_t spd)
 {
   setCommandSigns(+1, -1);
-  Motor.DeviceDriverSet_Motor_control(direction_just, spd, // A
-                                      direction_back, spd, // B
+  Motor.DeviceDriverSet_Motor_control(direction_just, spd, // A = Right
+                                      direction_back, spd, // B = Left
                                       control_enable);
 }
 
@@ -101,7 +111,6 @@ static void handleButton(uint8_t b)
 
 void handleSerialJetson()
 {
-  // Read and handle one line if available
   if (Serial.available())
   {
     String line = Serial.readStringUntil('\n');
@@ -125,11 +134,12 @@ void handleSerialJetson()
         int L = line.substring(4, c1).toInt();
         int R = line.substring(c1 + 1).toInt();
 
-        L = constrain(L, -255, 255); // fix L/R vs A/B
+        L = constrain(L, -255, 255);
         R = constrain(R, -255, 255);
 
         setCommandSigns((L >= 0) ? +1 : -1, (R >= 0) ? +1 : -1);
-        // A = Right, B = Left (per your driver comments)
+
+        // A = Right, B = Left
         boolean dirA = (R >= 0) ? direction_just : direction_back;
         boolean dirB = (L >= 0) ? direction_just : direction_back;
 
@@ -173,19 +183,23 @@ void handleSerialJetson()
     }
   }
 
-  // Timeout always runs (even if no serial available)
   if (millis() - lastCmdMs > CMD_TIMEOUT_MS)
   {
-    g_mode = MODE_STANDBY;
-    motorsStop();
-    // DO NOT update lastCmdMs here
+    if (g_mode != MODE_STANDBY)
+    {
+      g_mode = MODE_STANDBY;
+      motorsStop();
+    }
   }
 }
 
 void setup()
 {
   Serial.begin(BAUD);
+
+  setupImu();
   setupOdometry();
+
   Motor.DeviceDriverSet_Motor_Init();
   AppIRrecv.DeviceDriverSet_IRrecv_Init();
 
@@ -196,12 +210,28 @@ void setup()
 
 void loop()
 {
+  updateImu();
   updateOdometry();
+
   uint8_t btn;
   if (AppIRrecv.DeviceDriverSet_IRrecv_Get(&btn))
   {
-    handleButton(btn);
-    lastCmdMs = millis();
+    const uint32_t now = millis();
+    const uint32_t dtMs = (lastIrBtnMs == 0) ? 0 : (now - lastIrBtnMs);
+    const bool isRepeat = (btn == lastIrBtn) && (dtMs < CMD_TIMEOUT_MS);
+    const bool accepted = (!isRepeat || btn == 5);
+
+    lastIrBtn = btn;
+    lastIrBtnMs = now;
+
+    if (accepted)
+    {
+      handleButton(btn);
+      if (isMotionButton(btn))
+      {
+        lastCmdMs = now;
+      }
+    }
   }
 
   handleSerialJetson();

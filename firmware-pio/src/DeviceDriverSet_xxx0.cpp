@@ -29,11 +29,11 @@ void DeviceDriverSet_RBGLED::DeviceDriverSet_RBGLED_xxx(uint16_t Duration, uint8
     delay_xxx(Duration);
   }
 }
-void DeviceDriverSet_RBGLED::DeviceDriverSet_RBGLED_Init(uint8_t set_Brightness)
-{
-  FastLED.addLeds<NEOPIXEL, PIN_RBGLED>(leds, NUM_LEDS);
-  FastLED.setBrightness(set_Brightness);
-}
+// void DeviceDriverSet_RBGLED::DeviceDriverSet_RBGLED_Init(uint8_t set_Brightness)
+// {
+//   FastLED.addLeds<NEOPIXEL, PIN_RBGLED>(leds, NUM_LEDS);
+//   FastLED.setBrightness(set_Brightness);
+// }
 #if _Test_DeviceDriverSet
 void DeviceDriverSet_RBGLED::DeviceDriverSet_RBGLED_Test(void)
 {
@@ -221,11 +221,11 @@ void DeviceDriverSet_Motor::DeviceDriverSet_Motor_control(boolean direction_A, u
         break;
       case direction_void:
         analogWrite(PIN_Motor_PWMA, 0);
-        digitalWrite(PIN_Motor_STBY, LOW);
+        digitalWrite(PIN_Motor_AIN_1, LOW);
         break;
       default:
         analogWrite(PIN_Motor_PWMA, 0);
-        digitalWrite(PIN_Motor_STBY, LOW);
+        digitalWrite(PIN_Motor_AIN_1, LOW);
         break;
       }
     }
@@ -244,17 +244,21 @@ void DeviceDriverSet_Motor::DeviceDriverSet_Motor_control(boolean direction_A, u
         break;
       case direction_void:
         analogWrite(PIN_Motor_PWMB, 0);
-        digitalWrite(PIN_Motor_STBY, LOW);
+        digitalWrite(PIN_Motor_BIN_1, LOW);
         break;
       default:
         analogWrite(PIN_Motor_PWMB, 0);
-        digitalWrite(PIN_Motor_STBY, LOW);
+        digitalWrite(PIN_Motor_BIN_1, LOW);
         break;
       }
     }
   }
   else
   {
+    analogWrite(PIN_Motor_PWMA, 0);
+    analogWrite(PIN_Motor_PWMB, 0);
+    digitalWrite(PIN_Motor_AIN_1, LOW);
+    digitalWrite(PIN_Motor_BIN_1, LOW);
     digitalWrite(PIN_Motor_STBY, LOW);
     return;
   }

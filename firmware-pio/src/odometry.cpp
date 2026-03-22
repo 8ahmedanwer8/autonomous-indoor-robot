@@ -1,4 +1,5 @@
 #include "odometry.h"
+#include "IMU.h"
 #include "PinChangeInterrupt.h"
 #include <Arduino.h>
 
@@ -18,11 +19,18 @@ volatile int8_t cmdSignR = 1;
 const float WHEEL_CIRC_M = 0.215f;  // <-- set this (meters). Example: 204mm = 0.204m
 const uint16_t PULSES_PER_REV = 8;  // <-- set this after 1-rev calibration
 const bool LOG_RAW_DIGITAL = false; // set true if you still want >enc raw 0/1
-const float TRACK_WIDTH_M = 0.13f;  // distance between center of right tire and center of left tire
-
 float totalDistL_M = 0.0f;
 float totalDistR_M = 0.0f;
 static float x = 0, y = 0, theta = 0;
+
+static float wrapPi(float angle)
+{
+    while (angle > PI)
+        angle -= 2.0f * PI;
+    while (angle < -PI)
+        angle += 2.0f * PI;
+    return angle;
+}
 
 void encoderISR_BL() { encPulsesBL++; }
 void encoderISR_BR() { encPulsesBR++; }
@@ -98,17 +106,13 @@ void updateOdometry()
     float dR = sR * (dPR * distPerPulse);
 
     float ds = 0.5f * (dR + dL);
-    float dtheta = (dR - dL) / TRACK_WIDTH_M;
-
-    float theta_mid = theta + 0.5f * dtheta;
+    float prevTheta = theta;
+    float imuTheta = isImuReady() ? getImuHeadingRad() : theta;
+    float dtheta = wrapPi(imuTheta - prevTheta);
+    float theta_mid = wrapPi(prevTheta + 0.5f * dtheta);
     x += ds * cos(theta_mid);
     y += ds * sin(theta_mid);
-    theta += dtheta;
-
-    if (theta > PI)
-        theta -= 2 * PI;
-    else if (theta < -PI)
-        theta += 2 * PI;
+    theta = imuTheta;
 
     Serial.print(">dPBL:");
     Serial.println((long)dPBL);
