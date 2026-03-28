@@ -18,9 +18,8 @@ volatile int8_t cmdSignR = 1;
 
 const float WHEEL_CIRC_M = 0.215f;  // <-- set this (meters). Example: 204mm = 0.204m
 const uint16_t PULSES_PER_REV = 8;  // <-- set this after 1-rev calibration
-const bool LOG_RAW_DIGITAL = false; // set true if you still want >enc raw 0/1
-float totalDistL_M = 0.0f;
-float totalDistR_M = 0.0f;
+static float totalDistL_M = 0.0f;
+static float totalDistR_M = 0.0f;
 static float x = 0, y = 0, theta = 0;
 
 static float wrapPi(float angle)
@@ -97,7 +96,6 @@ void updateOdometry()
     lastFL = cFL;
     lastFR = cFR;
 
-    float dt = (now - lastMs) / 1000.0f;
     lastMs = now;
 
     const float distPerPulse = WHEEL_CIRC_M / (float)PULSES_PER_REV;
@@ -113,45 +111,24 @@ void updateOdometry()
     x += ds * cos(theta_mid);
     y += ds * sin(theta_mid);
     theta = imuTheta;
-
-    Serial.print(">dPBL:");
-    Serial.println((long)dPBL);
-    Serial.print(">dPFL:");
-    Serial.println((long)dPFL);
-    Serial.print(">dPBR:");
-    Serial.println((long)dPBR);
-    Serial.print(">dPFR:");
-    Serial.println((long)dPFR);
-
-    Serial.print(">dPL:");
-    Serial.println(dPL);
-    Serial.print(">dPR:");
-    Serial.println(dPR);
-
-    Serial.print(">X:");
-    Serial.println(x);
-    Serial.print(">Y:");
-    Serial.println(y);
-    Serial.print(">TH:");
-    Serial.println(theta);
-
     totalDistL_M += dL;
     totalDistR_M += dR;
 
-    float vL = (dt > 0) ? (dL / dt) : 0;
-    float vR = (dt > 0) ? (dR / dt) : 0;
-
-    float vAvg = 0.5f * (vL + vR);
-    float distAvg = 0.5f * (totalDistL_M + totalDistR_M);
-
-    (void)LOG_RAW_DIGITAL;
-    (void)vAvg;
-    (void)distAvg;
+    (void)dPBL;
+    (void)dPBR;
+    (void)dPFL;
+    (void)dPFR;
+    (void)dPL;
+    (void)dPR;
+    (void)dL;
+    (void)dR;
 }
 
 float getOdomX() { return x; }
 float getOdomY() { return y; }
 float getOdomTheta() { return theta; }
+float getLeftDistanceM() { return totalDistL_M; }
+float getRightDistanceM() { return totalDistR_M; }
 
 unsigned long getLeftPulses()
 {

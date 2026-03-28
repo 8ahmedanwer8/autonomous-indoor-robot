@@ -39,7 +39,6 @@ float g_accelZ_mps2 = 0.0f;
 
 float g_gyroBiasZ_radps = 0.0f;
 unsigned long g_lastUpdateUs = 0;
-unsigned long g_lastLogMs = 0;
 unsigned long g_lastHeartbeatMs = 0;
 bool g_statusLedState = false;
 
@@ -294,7 +293,6 @@ bool setupImu()
   g_headingRad = 0.0f;
   g_headingDeg = 0.0f;
   g_lastUpdateUs = micros();
-  g_lastLogMs = 0;
   g_lastHeartbeatMs = millis();
   g_imuReady = true;
 
@@ -334,18 +332,6 @@ void updateImu()
     g_gyroZ_radps = yawRate;
     g_headingRad = wrapPi(g_headingRad + yawRate * dt);
     g_headingDeg = wrap360(g_headingRad * 180.0f / PI);
-  }
-
-  unsigned long now = millis();
-  if (now - g_lastLogMs >= 100)
-  {
-    g_lastLogMs = now;
-
-    Serial.print(">IMU_GZ:");
-    Serial.println(g_gyroZ_radps, 6);
-
-    Serial.print(">IMU_TH:");
-    Serial.println(g_headingRad, 6);
   }
 }
 

@@ -9,6 +9,8 @@ void setCommandSigns(int8_t leftSign, int8_t rightSign);
 float getOdomX();
 float getOdomY();
 float getOdomTheta();
+float getLeftDistanceM();
+float getRightDistanceM();
 
 unsigned long getLeftPulses();
 unsigned long getRightPulses();

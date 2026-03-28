@@ -5,6 +5,7 @@
 
 #define BAUD 115200
 #define CMD_TIMEOUT_MS 800
+#define ODOM_TX_INTERVAL_MS 100
 
 enum Mode : uint8_t
 {
@@ -26,6 +27,32 @@ DeviceDriverSet_IRrecv AppIRrecv;
 static bool isMotionButton(uint8_t b)
 {
   return b >= 1 && b <= 5;
+}
+
+static void sendOdomPacket()
+{
+  static uint32_t lastTxMs = 0;
+
+  const uint32_t now = millis();
+  if (now - lastTxMs < ODOM_TX_INTERVAL_MS)
+  {
+    return;
+  }
+
+  lastTxMs = now;
+
+  Serial.print(F("ODOM,"));
+  Serial.print(now);
+  Serial.print(',');
+  Serial.print(getLeftDistanceM(), 6);
+  Serial.print(',');
+  Serial.print(getRightDistanceM(), 6);
+  Serial.print(',');
+  Serial.print(getOdomTheta(), 6);
+  Serial.print(',');
+  Serial.print(getImuGyroZ_radps(), 6);
+  Serial.print(',');
+  Serial.println(isImuReady() ? 1 : 0);
 }
 
 // ---- Motor helpers ----
@@ -235,4 +262,5 @@ void loop()
   }
 
   handleSerialJetson();
+  sendOdomPacket();
 }
