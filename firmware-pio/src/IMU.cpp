@@ -1,4 +1,5 @@
 #include "IMU.h"
+#include "telemetry_config.h"
 
 #include <Wire.h>
 
@@ -40,6 +41,7 @@ float g_accelZ_mps2 = 0.0f;
 float g_gyroBiasZ_radps = 0.0f;
 unsigned long g_lastUpdateUs = 0;
 unsigned long g_lastHeartbeatMs = 0;
+unsigned long g_lastDebugLogMs = 0;
 bool g_statusLedState = false;
 
 float wrapPi(float angle)
@@ -294,6 +296,7 @@ bool setupImu()
   g_headingDeg = 0.0f;
   g_lastUpdateUs = micros();
   g_lastHeartbeatMs = millis();
+  g_lastDebugLogMs = 0;
   g_imuReady = true;
 
   Serial.println(F("IMU ready"));
@@ -333,6 +336,18 @@ void updateImu()
     g_headingRad = wrapPi(g_headingRad + yawRate * dt);
     g_headingDeg = wrap360(g_headingRad * 180.0f / PI);
   }
+
+#if TELEMETRY_MODE == TELEMETRY_MODE_TELEPLOT_DEBUG
+  const unsigned long nowMs = millis();
+  if (nowMs - g_lastDebugLogMs >= 100)
+  {
+    g_lastDebugLogMs = nowMs;
+    Serial.print(">IMU_GZ:");
+    Serial.println(g_gyroZ_radps, 6);
+    Serial.print(">IMU_TH:");
+    Serial.println(g_headingRad, 6);
+  }
+#endif
 }
 
 bool isImuReady()

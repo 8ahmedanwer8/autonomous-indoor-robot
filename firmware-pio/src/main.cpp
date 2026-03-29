@@ -2,6 +2,7 @@
 #include "DeviceDriverSet_xxx0.h"
 #include "IMU.h"
 #include "odometry.h"
+#include "telemetry_config.h"
 
 #define BAUD 115200
 #define CMD_TIMEOUT_MS 800
@@ -31,6 +32,7 @@ static bool isMotionButton(uint8_t b)
 
 static void sendOdomPacket()
 {
+#if TELEMETRY_MODE == TELEMETRY_MODE_ROS_PACKET
   static uint32_t lastTxMs = 0;
 
   const uint32_t now = millis();
@@ -53,6 +55,7 @@ static void sendOdomPacket()
   Serial.print(getImuGyroZ_radps(), 6);
   Serial.print(',');
   Serial.println(isImuReady() ? 1 : 0);
+#endif
 }
 
 // ---- Motor helpers ----

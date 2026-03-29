@@ -1,6 +1,7 @@
 #include "odometry.h"
 #include "IMU.h"
 #include "PinChangeInterrupt.h"
+#include "telemetry_config.h"
 #include <Arduino.h>
 
 const byte ENC_BL_PIN = 12;
@@ -29,6 +30,33 @@ static float wrapPi(float angle)
     while (angle < -PI)
         angle += 2.0f * PI;
     return angle;
+}
+
+static void sendTeleplotOdomDebug(unsigned long dPBL, unsigned long dPBR,
+                                  unsigned long dPFL, unsigned long dPFR,
+                                  float dPL, float dPR,
+                                  float xNow, float yNow, float thetaNow)
+{
+#if TELEMETRY_MODE == TELEMETRY_MODE_TELEPLOT_DEBUG
+    Serial.print(">dPBL:");
+    Serial.println((long)dPBL);
+    Serial.print(">dPFL:");
+    Serial.println((long)dPFL);
+    Serial.print(">dPBR:");
+    Serial.println((long)dPBR);
+    Serial.print(">dPFR:");
+    Serial.println((long)dPFR);
+    Serial.print(">dPL:");
+    Serial.println(dPL);
+    Serial.print(">dPR:");
+    Serial.println(dPR);
+    Serial.print(">X:");
+    Serial.println(xNow, 6);
+    Serial.print(">Y:");
+    Serial.println(yNow, 6);
+    Serial.print(">TH:");
+    Serial.println(thetaNow, 6);
+#endif
 }
 
 void encoderISR_BL() { encPulsesBL++; }
@@ -113,15 +141,7 @@ void updateOdometry()
     theta = imuTheta;
     totalDistL_M += dL;
     totalDistR_M += dR;
-
-    (void)dPBL;
-    (void)dPBR;
-    (void)dPFL;
-    (void)dPFR;
-    (void)dPL;
-    (void)dPR;
-    (void)dL;
-    (void)dR;
+    sendTeleplotOdomDebug(dPBL, dPBR, dPFL, dPFR, dPL, dPR, x, y, theta);
 }
 
 float getOdomX() { return x; }
