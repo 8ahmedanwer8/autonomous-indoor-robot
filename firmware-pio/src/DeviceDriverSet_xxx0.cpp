@@ -1,4 +1,5 @@
 #include "DeviceDriverSet_xxx0.h"
+#include "telemetry_config.h"
 // #include "PinChangeInt.h"
 #include <avr/wdt.h>
 
@@ -160,12 +161,41 @@ void DeviceDriverSet_Voltage::DeviceDriverSet_Voltage_Test(void)
 }
 #endif
 /*Motor control*/
+
+#if TELEMETRY_MODE == TELEMETRY_MODE_TELEPLOT_DEBUG
+static void logMotorState(uint8_t a1, uint8_t a2, uint8_t pwmA,
+                          uint8_t b1, uint8_t b2, uint8_t pwmB,
+                          uint8_t stby)
+{
+  Serial.print(F("[MOTOR] A1="));
+  Serial.print(a1);
+  Serial.print(F(" A2="));
+  Serial.print(a2);
+  Serial.print(F(" PA="));
+  Serial.print(pwmA);
+  Serial.print(F(" B1="));
+  Serial.print(b1);
+  Serial.print(F(" B2="));
+  Serial.print(b2);
+  Serial.print(F(" PB="));
+  Serial.print(pwmB);
+  Serial.print(F(" STBY="));
+  Serial.println(stby);
+}
+#else
+static void logMotorState(uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, uint8_t)
+{
+}
+#endif
+
 void DeviceDriverSet_Motor::DeviceDriverSet_Motor_Init(void)
 {
   pinMode(PIN_Motor_PWMA, OUTPUT);
   pinMode(PIN_Motor_PWMB, OUTPUT);
   pinMode(PIN_Motor_AIN_1, OUTPUT);
+  pinMode(PIN_Motor_AIN_2, OUTPUT);
   pinMode(PIN_Motor_BIN_1, OUTPUT);
+  pinMode(PIN_Motor_BIN_2, OUTPUT);
   pinMode(PIN_Motor_STBY, OUTPUT);
 }
 
@@ -177,8 +207,10 @@ void DeviceDriverSet_Motor::DeviceDriverSet_Motor_Test(void)
   digitalWrite(PIN_Motor_STBY, HIGH);
 
   digitalWrite(PIN_Motor_AIN_1, HIGH);
+  digitalWrite(PIN_Motor_AIN_2, LOW);
   analogWrite(PIN_Motor_PWMA, 100);
   digitalWrite(PIN_Motor_BIN_1, HIGH);
+  digitalWrite(PIN_Motor_BIN_2, LOW);
   analogWrite(PIN_Motor_PWMB, 100);
   delay_xxx(1000);
 
@@ -186,8 +218,10 @@ void DeviceDriverSet_Motor::DeviceDriverSet_Motor_Test(void)
   delay_xxx(1000);
   digitalWrite(PIN_Motor_STBY, HIGH);
   digitalWrite(PIN_Motor_AIN_1, LOW);
+  digitalWrite(PIN_Motor_AIN_2, HIGH);
   analogWrite(PIN_Motor_PWMA, 100);
   digitalWrite(PIN_Motor_BIN_1, LOW);
+  digitalWrite(PIN_Motor_BIN_2, HIGH);
   analogWrite(PIN_Motor_PWMB, 100);
 
   delay_xxx(1000);
@@ -202,66 +236,62 @@ void DeviceDriverSet_Motor::DeviceDriverSet_Motor_control(boolean direction_A, u
                                                           boolean controlED                     // AB enable setting (true)
                                                           )                                     // Motor control
 {
+  uint8_t a1 = LOW;
+  uint8_t a2 = LOW;
+  uint8_t b1 = LOW;
+  uint8_t b2 = LOW;
+  uint8_t pwmA = 0;
+  uint8_t pwmB = 0;
+  uint8_t stby = LOW;
 
   if (controlED == control_enable) // Enable motot control？
   {
-    digitalWrite(PIN_Motor_STBY, HIGH);
-    { // A...Right
-
-      switch (direction_A) // movement direction control
-      {
-      case direction_just:
-        digitalWrite(PIN_Motor_AIN_1, HIGH);
-        analogWrite(PIN_Motor_PWMA, speed_A);
-        break;
-      case direction_back:
-
-        digitalWrite(PIN_Motor_AIN_1, LOW);
-        analogWrite(PIN_Motor_PWMA, speed_A);
-        break;
-      case direction_void:
-        analogWrite(PIN_Motor_PWMA, 0);
-        digitalWrite(PIN_Motor_AIN_1, LOW);
-        break;
-      default:
-        analogWrite(PIN_Motor_PWMA, 0);
-        digitalWrite(PIN_Motor_AIN_1, LOW);
-        break;
-      }
+    stby = HIGH;
+    // A...Right
+    if (speed_A == 0)
+    {
+      a1 = LOW;
+      a2 = LOW;
     }
-
-    { // B...Left
-      switch (direction_B)
-      {
-      case direction_just:
-        digitalWrite(PIN_Motor_BIN_1, HIGH);
-
-        analogWrite(PIN_Motor_PWMB, speed_B);
-        break;
-      case direction_back:
-        digitalWrite(PIN_Motor_BIN_1, LOW);
-        analogWrite(PIN_Motor_PWMB, speed_B);
-        break;
-      case direction_void:
-        analogWrite(PIN_Motor_PWMB, 0);
-        digitalWrite(PIN_Motor_BIN_1, LOW);
-        break;
-      default:
-        analogWrite(PIN_Motor_PWMB, 0);
-        digitalWrite(PIN_Motor_BIN_1, LOW);
-        break;
-      }
+    else if (direction_A == direction_just)
+    {
+      a1 = HIGH;
+      a2 = LOW;
     }
+    else
+    {
+      a1 = LOW;
+      a2 = HIGH;
+    }
+    pwmA = speed_A;
+
+    // B...Left
+    if (speed_B == 0)
+    {
+      b1 = LOW;
+      b2 = LOW;
+    }
+    else if (direction_B == direction_just)
+    {
+      b1 = HIGH;
+      b2 = LOW;
+    }
+    else
+    {
+      b1 = LOW;
+      b2 = HIGH;
+    }
+    pwmB = speed_B;
   }
-  else
-  {
-    analogWrite(PIN_Motor_PWMA, 0);
-    analogWrite(PIN_Motor_PWMB, 0);
-    digitalWrite(PIN_Motor_AIN_1, LOW);
-    digitalWrite(PIN_Motor_BIN_1, LOW);
-    digitalWrite(PIN_Motor_STBY, LOW);
-    return;
-  }
+
+  digitalWrite(PIN_Motor_STBY, stby);
+  digitalWrite(PIN_Motor_AIN_1, a1);
+  digitalWrite(PIN_Motor_AIN_2, a2);
+  digitalWrite(PIN_Motor_BIN_1, b1);
+  digitalWrite(PIN_Motor_BIN_2, b2);
+  analogWrite(PIN_Motor_PWMA, pwmA);
+  analogWrite(PIN_Motor_PWMB, pwmB);
+  logMotorState(a1, a2, pwmA, b1, b2, pwmB, stby);
 }
 
 /*IRrecv*/

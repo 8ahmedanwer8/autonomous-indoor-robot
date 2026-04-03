@@ -94,10 +94,16 @@ private:
   // #define PIN_Motor_BIN_1 7
   // #define PIN_Motor_AIN_1 9
 //TB6612
+// Bare TB6612 module uses full IN1/IN2 control.
+// A2 is used as a digital output here to avoid the flaky D2 path.
+// This reuses A0 and A2, so the optional left/right line sensors
+// cannot be used at the same time as the raw motor module wiring below.
 #define PIN_Motor_PWMA 5
 #define PIN_Motor_PWMB 6
 #define PIN_Motor_BIN_1 8
+#define PIN_Motor_BIN_2 A0
 #define PIN_Motor_AIN_1 7
+#define PIN_Motor_AIN_2 A2
 #define PIN_Motor_STBY 3
 public:
 #define speed_Max 255
