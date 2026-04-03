@@ -25,6 +25,20 @@ uint8_t g_speed = 130;
 DeviceDriverSet_Motor Motor;
 DeviceDriverSet_IRrecv AppIRrecv;
 
+struct PinTestState
+{
+  bool active;
+  uint8_t stby;
+  uint8_t a1;
+  uint8_t a2;
+  uint8_t pwmA;
+  uint8_t b1;
+  uint8_t b2;
+  uint8_t pwmB;
+};
+
+static PinTestState g_pinTest = {false, 0, 0, 0, 0, 0, 0, 0};
+
 static bool isMotionButton(uint8_t b)
 {
   return b >= 1 && b <= 5;
@@ -58,6 +72,178 @@ static void sendOdomPacket()
 #endif
 }
 
+static void logPinTestState()
+{
+  Serial.print(F("[PINTEST] STBY="));
+  Serial.print(g_pinTest.stby);
+  Serial.print(F(" AIN1="));
+  Serial.print(g_pinTest.a1);
+  Serial.print(F(" AIN2="));
+  Serial.print(g_pinTest.a2);
+  Serial.print(F(" PWMA="));
+  Serial.print(g_pinTest.pwmA);
+  Serial.print(F(" BIN1="));
+  Serial.print(g_pinTest.b1);
+  Serial.print(F(" BIN2="));
+  Serial.print(g_pinTest.b2);
+  Serial.print(F(" PWMB="));
+  Serial.println(g_pinTest.pwmB);
+}
+
+static void applyPinTestState()
+{
+  digitalWrite(PIN_Motor_STBY, g_pinTest.stby ? HIGH : LOW);
+  digitalWrite(PIN_Motor_AIN_1, g_pinTest.a1 ? HIGH : LOW);
+  digitalWrite(PIN_Motor_AIN_2, g_pinTest.a2 ? HIGH : LOW);
+  digitalWrite(PIN_Motor_BIN_1, g_pinTest.b1 ? HIGH : LOW);
+  digitalWrite(PIN_Motor_BIN_2, g_pinTest.b2 ? HIGH : LOW);
+  analogWrite(PIN_Motor_PWMA, g_pinTest.pwmA);
+  analogWrite(PIN_Motor_PWMB, g_pinTest.pwmB);
+  logPinTestState();
+}
+
+static void setPinTestOutputs(bool active,
+                              uint8_t stby, uint8_t a1, uint8_t a2, uint8_t pwmA,
+                              uint8_t b1, uint8_t b2, uint8_t pwmB)
+{
+  g_pinTest.active = active;
+  g_pinTest.stby = stby;
+  g_pinTest.a1 = a1;
+  g_pinTest.a2 = a2;
+  g_pinTest.pwmA = pwmA;
+  g_pinTest.b1 = b1;
+  g_pinTest.b2 = b2;
+  g_pinTest.pwmB = pwmB;
+  applyPinTestState();
+}
+
+static void beginPinTestMode()
+{
+  g_mode = MODE_STANDBY;
+  lastCmdMs = millis();
+}
+
+static void exitPinTestMode()
+{
+  if (!g_pinTest.active)
+  {
+    return;
+  }
+
+  setPinTestOutputs(false, 0, 0, 0, 0, 0, 0, 0);
+  Serial.println(F("[PINTEST] OFF"));
+}
+
+static void printPinTestHelp()
+{
+  Serial.println(F("PINTEST commands:"));
+  Serial.println(F("  PINTEST,SHOW"));
+  Serial.println(F("  PINTEST,OFF"));
+  Serial.println(F("  PINTEST,A_FWD / A_REV / B_FWD / B_REV"));
+  Serial.println(F("  PINTEST,<STBY|AIN1|AIN2|PWMA|BIN1|BIN2|PWMB>,<value>"));
+  Serial.println(F("  Example: PINTEST,AIN1,1"));
+  Serial.println(F("  Example: PINTEST,PWMA,255"));
+}
+
+static bool handlePinTestCommand(const String &line)
+{
+  String cmd = line;
+  cmd.trim();
+  cmd.toUpperCase();
+
+  if (!cmd.startsWith("PINTEST"))
+  {
+    return false;
+  }
+
+  if (cmd == "PINTEST" || cmd == "PINTEST,HELP")
+  {
+    printPinTestHelp();
+    return true;
+  }
+
+  if (!cmd.startsWith("PINTEST,"))
+  {
+    Serial.println(F("[PINTEST] Invalid command"));
+    printPinTestHelp();
+    return true;
+  }
+
+  String body = cmd.substring(8);
+  body.trim();
+
+  if (body == "SHOW")
+  {
+    logPinTestState();
+    return true;
+  }
+
+  if (body == "OFF")
+  {
+    exitPinTestMode();
+    return true;
+  }
+
+  beginPinTestMode();
+
+  if (body == "A_FWD")
+  {
+    setPinTestOutputs(true, 1, 1, 0, 255, 0, 0, 0);
+    return true;
+  }
+  if (body == "A_REV")
+  {
+    setPinTestOutputs(true, 1, 0, 1, 255, 0, 0, 0);
+    return true;
+  }
+  if (body == "B_FWD")
+  {
+    setPinTestOutputs(true, 1, 0, 0, 0, 1, 0, 255);
+    return true;
+  }
+  if (body == "B_REV")
+  {
+    setPinTestOutputs(true, 1, 0, 0, 0, 0, 1, 255);
+    return true;
+  }
+
+  const int comma = body.indexOf(',');
+  if (comma <= 0)
+  {
+    Serial.println(F("[PINTEST] Invalid command"));
+    printPinTestHelp();
+    return true;
+  }
+
+  String pinName = body.substring(0, comma);
+  const int value = body.substring(comma + 1).toInt();
+
+  if (pinName == "STBY")
+    g_pinTest.stby = (value != 0) ? 1 : 0;
+  else if (pinName == "AIN1")
+    g_pinTest.a1 = (value != 0) ? 1 : 0;
+  else if (pinName == "AIN2")
+    g_pinTest.a2 = (value != 0) ? 1 : 0;
+  else if (pinName == "BIN1")
+    g_pinTest.b1 = (value != 0) ? 1 : 0;
+  else if (pinName == "BIN2")
+    g_pinTest.b2 = (value != 0) ? 1 : 0;
+  else if (pinName == "PWMA")
+    g_pinTest.pwmA = constrain(value, 0, 255);
+  else if (pinName == "PWMB")
+    g_pinTest.pwmB = constrain(value, 0, 255);
+  else
+  {
+    Serial.println(F("[PINTEST] Unknown pin"));
+    printPinTestHelp();
+    return true;
+  }
+
+  g_pinTest.active = true;
+  applyPinTestState();
+  return true;
+}
+
 // ---- Motor helpers ----
 static void motorsStop()
 {
@@ -82,16 +268,16 @@ static void motorsBackward(uint8_t spd)
 static void motorsLeft(uint8_t spd)
 {
   setCommandSigns(-1, +1);
-  Motor.DeviceDriverSet_Motor_control(direction_back, spd, // A = Right
-                                      direction_just, spd, // B = Left
+  Motor.DeviceDriverSet_Motor_control(direction_just, spd, // A = Right
+                                      direction_back, spd, // B = Left
                                       control_enable);
 }
 
 static void motorsRight(uint8_t spd)
 {
   setCommandSigns(+1, -1);
-  Motor.DeviceDriverSet_Motor_control(direction_just, spd, // A = Right
-                                      direction_back, spd, // B = Left
+  Motor.DeviceDriverSet_Motor_control(direction_back, spd, // A = Right
+                                      direction_just, spd, // B = Left
                                       control_enable);
 }
 
@@ -146,8 +332,14 @@ void handleSerialJetson()
     String line = Serial.readStringUntil('\n');
     line.trim();
 
+    if (handlePinTestCommand(line))
+    {
+      return;
+    }
+
     if (line.equalsIgnoreCase("STOP"))
     {
+      exitPinTestMode();
       g_mode = MODE_STANDBY;
       motorsStop();
       lastCmdMs = millis();
@@ -156,6 +348,7 @@ void handleSerialJetson()
 
     if (line.startsWith("VEL,"))
     {
+      exitPinTestMode();
       g_mode = MODE_DRIVE;
 
       int c1 = line.indexOf(',', 4);
@@ -184,6 +377,7 @@ void handleSerialJetson()
 
     if (line.startsWith("STEP,"))
     {
+      exitPinTestMode();
       int p1 = line.indexOf(',', 5);
       int p2 = (p1 > 0) ? line.indexOf(',', p1 + 1) : -1;
       if (p1 > 0 && p2 > 0)
