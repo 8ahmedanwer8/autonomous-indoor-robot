@@ -4,22 +4,25 @@ import threading
 
 import rospy
 import serial
-from geometry_msgs.msg import Twist, Quaternion
+from geometry_msgs.msg import Twist, Quaternion, TransformStamped
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu, MagneticField
 from std_msgs.msg import String
 from tf.transformations import quaternion_from_euler
+import tf2_ros
 
 
 class ArduinoBridge(object):
     def __init__(self):
         self.port = rospy.get_param("~port", "/dev/ttyACM0")
         self.baud = int(rospy.get_param("~baud", 115200))
+        self.publish_tf = rospy.get_param("~publish_tf", True)
+
 
         self.wheel_base = float(rospy.get_param("~wheel_base", 0.13))
         self.k_pwm = float(rospy.get_param("~k_pwm", 500.0))
         self.max_pwm = int(rospy.get_param("~max_pwm", 255))
-        self.deadman_timeout = float(rospy.get_param("~deadman_timeout", 0.5))
+        self.deadman_timeout = float(rospy.get_param("~deadman_timeout", 0.3))
 
         self.odom_frame = rospy.get_param("~odom_frame", "odom")
         self.base_frame = rospy.get_param("~base_frame", "base_link")
@@ -37,6 +40,8 @@ class ArduinoBridge(object):
 
         self.reset_odom_state()
         self.prev_arduino_ms = None
+
+        self.tf_broadcaster = tf2_ros.TransformBroadcaster()
 
         self.odom_pub = rospy.Publisher("/wheel_odom", Odometry, queue_size=20)
         self.imu_pub = rospy.Publisher("/imu/data", Imu, queue_size=50)
@@ -71,7 +76,6 @@ class ArduinoBridge(object):
         left_pwm = int(max(-self.max_pwm, min(self.max_pwm, round(self.k_pwm * v_l))))
         right_pwm = int(max(-self.max_pwm, min(self.max_pwm, round(self.k_pwm * v_r))))
         rospy.loginfo_throttle(0.2, "CMD | v=%.3f w=%.3f -> L=%d R=%d", v, w, left_pwm, right_pwm)
-
 
         line = "VEL,{0},{1}\n".format(left_pwm, right_pwm)
         self.write_line(line)
@@ -274,6 +278,17 @@ class ArduinoBridge(object):
         ]
 
         self.odom_pub.publish(msg)
+
+        tf_msg = TransformStamped()
+        tf_msg.header.stamp = stamp
+        tf_msg.header.frame_id = self.odom_frame
+        tf_msg.child_frame_id = self.base_frame
+        tf_msg.transform.translation.x = x
+        tf_msg.transform.translation.y = y
+        tf_msg.transform.translation.z = 0.0
+        tf_msg.transform.rotation = Quaternion(*q)
+        if self.publish_tf:
+            self.tf_broadcaster.sendTransform(tf_msg)
 
     def publish_imu(self, stamp, gyro_z, accel_x, accel_y, accel_z, imu_ready):
         msg = Imu()

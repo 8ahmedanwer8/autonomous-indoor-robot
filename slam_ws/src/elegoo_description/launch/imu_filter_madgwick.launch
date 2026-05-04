@@ -1,0 +1,23 @@
+<launch>
+  <arg name="imu_raw_topic" default="/imu/data"/>
+  <arg name="mag_topic" default="/imu/mag"/>
+  <arg name="imu_filtered_topic" default="/imu/data_filtered"/>
+  <arg name="world_frame" default="enu"/>
+
+  <node pkg="imu_filter_madgwick"
+        type="imu_filter_node"
+        name="imu_filter_madgwick"
+        output="screen">
+    <param name="use_mag" value="false"/>
+    <param name="publish_tf" value="false"/>
+    <param name="world_frame" value="$(arg world_frame)"/>
+    <param name="gain" value="0.1"/>
+    <param name="zeta" value="0.0"/>
+    <param name="orientation_stddev" value="0.05"/>
+
+    <remap from="imu/data_raw" to="$(arg imu_raw_topic)"/>
+    <remap from="imu/mag" to="$(arg mag_topic)"/>
+    <remap from="imu/data" to="$(arg imu_filtered_topic)"/>
+  </node>
+</launch>
+

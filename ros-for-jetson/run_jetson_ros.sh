@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-IMAGE_NAME="my-ros-melodic-full"
+IMAGE_NAME="my-ros-melodic-full:jetson"
 
 # Optional: your workspace on the Jetson
 HOST_WS=$HOME/codin/capstone/slam_ws

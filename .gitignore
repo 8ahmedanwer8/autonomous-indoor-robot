@@ -4,7 +4,8 @@
 # === Arduino IDE build artifacts ===
 *.elf
 *.hex
-
+*.pdf
+*.gv
 # Arduino CLI / PlatformIO build dirs
 build*/
 .pio/
