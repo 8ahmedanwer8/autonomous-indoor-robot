@@ -20,3 +20,15 @@ Thumbs.db
 
 # VSCode / PlatformIO
 .vscode/
+
+
+meeting-minutes/*
+presentation/*
+
+# Tooling / dump artifacts
+firmware-pio/.codex/
+firmware-pio/all_code.txt
+firmware-pio/project_dump.txt
+
+# Binary installers
+*.deb
