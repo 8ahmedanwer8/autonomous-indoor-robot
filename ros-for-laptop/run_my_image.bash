@@ -23,9 +23,12 @@ docker run -it --rm \
   --env="DISPLAY=$DISPLAY" \
   --env="QT_X11_NO_MITSHM=1" \
   --env="XAUTHORITY=$XAUTH" \
+  --env="ROS_MASTER_URI=http://ahmedski-desktop.local:11311" \
+  --env="ROS_HOSTNAME=sahme-ROG-Zephyrus-G14-GA401IU-GA401IU.local" \
   --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
   --volume="$XAUTH:$XAUTH" \
   --volume="$HOST_WS:/root/ros_ws:rw" \
+  --volume="/run/avahi-daemon:/run/avahi-daemon:ro" \
   --runtime=nvidia \
   "$IMAGE_NAME" \
   bash

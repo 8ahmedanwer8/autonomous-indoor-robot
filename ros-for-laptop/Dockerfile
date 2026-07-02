@@ -6,9 +6,17 @@ RUN apt-get update && \
       ros-melodic-desktop-full \
       ros-melodic-realsense2-camera \
       ros-melodic-rplidar-ros \
+      ros-melodic-navigation \
+      ros-melodic-explore-lite \
+      ros-melodic-robot-localization \
+      ros-melodic-imu-tools \
+      ros-melodic-depthimage-to-laserscan \
       mesa-utils \
       nano \
       x11-apps \
+      libnss-mdns \
+      avahi-utils \
+      iputils-ping \
       ros-melodic-joint-state-publisher-gui \
       python-rosdep python-rosinstall python-rosinstall-generator python-wstool build-essential \
     && rm -rf /var/lib/apt/lists/*
