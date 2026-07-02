@@ -26,7 +26,7 @@ meeting-minutes/*
 presentation/*
 
 # Tooling / dump artifacts
-firmware-pio/.codex/
+firmware-pio/.codex
 firmware-pio/all_code.txt
 firmware-pio/project_dump.txt
 
