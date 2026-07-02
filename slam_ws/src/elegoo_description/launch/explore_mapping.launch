@@ -9,6 +9,13 @@
   <arg name="cmd_vel_nav_topic" default="/cmd_vel_nav"/>
   <arg name="cmd_vel_output_topic" default="/cmd_vel"/>
 
+  <!-- Pulsed in-place turn: duty-cycle rotation so SLAM gets clean scans
+       between bursts (reduces map smearing during explore_lite/move_base). -->
+  <arg name="pulsed_turn" default="false"/>
+  <arg name="turn_on_duration" default="0.5"/>
+  <arg name="turn_off_duration" default="0.5"/>
+  <arg name="deadband_rate" default="20.0"/>
+
   <!-- move_base planner-side values -->
   <arg name="cmd_vel_in_min_x" default="0.04"/>
   <arg name="cmd_vel_in_max_x" default="0.15"/>
@@ -74,9 +81,13 @@
     <param name="theta_deadband" value="0.02"/>
     <param name="driving_x_threshold" value="0.02"/>
 
-    <param name="max_x_step" value="0.20"/>
-    <param name="max_theta_step" value="10.0"/>
     <param name="cmd_timeout" value="0.6"/>
+
+    <!-- Pulsed in-place turn (anti map-smear). -->
+    <param name="pulsed_turn" value="$(arg pulsed_turn)"/>
+    <param name="turn_on_duration" value="$(arg turn_on_duration)"/>
+    <param name="turn_off_duration" value="$(arg turn_off_duration)"/>
+    <param name="rate" value="$(arg deadband_rate)"/>
   </node>
 
   <node if="$(arg use_explore_lite)"

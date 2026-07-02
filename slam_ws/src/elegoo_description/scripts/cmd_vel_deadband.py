@@ -54,6 +54,30 @@ class CmdVelDeadband(object):
             float(rospy.get_param("~driving_x_threshold", 0.02))
         )
 
+        # Pulsed in-place turn: duty-cycle rotation so the lidar/SLAM can
+        # integrate clean scans between bursts. Reduces map smearing during
+        # explore_lite / move_base in-place turns.
+        self.pulsed_turn = bool(rospy.get_param("~pulsed_turn", False))
+        self.turn_on_duration = float(
+            rospy.get_param("~turn_on_duration", 0.5)
+        )
+        self.turn_off_duration = float(
+            rospy.get_param("~turn_off_duration", 0.5)
+        )
+
+        # Output loop (only used when pulsed_turn is enabled). Decouples the
+        # output rate from the planner's controller_frequency so the duty cycle
+        # stays smooth even when move_base runs slowly (e.g. 3.5 Hz).
+        self.rate = float(rospy.get_param("~rate", 20.0))
+        self.cmd_timeout = float(rospy.get_param("~cmd_timeout", 0.6))
+
+        self.last_input = Twist()
+        self.last_input_time = rospy.Time(0)
+
+        # Pulsed-turn phase state ("on" = turn burst, "off" = pause).
+        self.turn_phase = "off"
+        self.turn_phase_start = None
+
         self.pub = rospy.Publisher(
             self.output_topic,
             Twist,
@@ -99,7 +123,55 @@ class CmdVelDeadband(object):
             self.out_max_theta_driving
         )
 
+        if self.pulsed_turn:
+            rospy.loginfo(
+                "pulsed turn ENABLED: on=%.2fs off=%.2fs @ %.1f Hz "
+                "(cmd_timeout=%.2fs)",
+                self.turn_on_duration,
+                self.turn_off_duration,
+                self.rate,
+                self.cmd_timeout
+            )
+            self.timer = rospy.Timer(
+                rospy.Duration(1.0 / self.rate), self.timer_cb
+            )
+        else:
+            rospy.loginfo("pulsed turn disabled (continuous output)")
+
     def cmd_cb(self, msg):
+        if not self.pulsed_turn:
+            # Original behaviour: remap and publish on every incoming command.
+            self.pub.publish(self.remap(msg))
+            return
+
+        # Pulsed mode: hand the latest command to the output timer so the duty
+        # cycle is driven at a fixed rate instead of the planner's rate.
+        self.last_input = msg
+        self.last_input_time = rospy.Time.now()
+
+    def timer_cb(self, _event):
+        now = rospy.Time.now()
+
+        # Planner went silent (or never spoke): stop and reset the phase.
+        if (now - self.last_input_time).to_sec() > self.cmd_timeout:
+            self.pub.publish(Twist())
+            self.reset_pulse()
+            return
+
+        out = self.remap(self.last_input)
+
+        in_place_turn = (
+            abs(self.last_input.linear.x) <= self.driving_x_threshold
+            and abs(out.angular.z) > 0.0
+        )
+        if in_place_turn:
+            out.angular.z = self.pulse_turn(out.angular.z, now)
+        else:
+            self.reset_pulse()
+
+        self.pub.publish(out)
+
+    def remap(self, msg):
         out = Twist()
 
         out.linear.x = self.remap_deadband(
@@ -135,7 +207,33 @@ class CmdVelDeadband(object):
                 self.theta_deadband
             )
 
-        self.pub.publish(out)
+        return out
+
+    def pulse_turn(self, angular_z, now):
+        # Start the first burst on demand.
+        if self.turn_phase_start is None:
+            self.turn_phase = "on"
+            self.turn_phase_start = now
+
+        elapsed = (now - self.turn_phase_start).to_sec()
+
+        if self.turn_phase == "on":
+            if elapsed >= self.turn_on_duration:
+                self.turn_phase = "off"
+                self.turn_phase_start = now
+                return 0.0
+            return angular_z
+
+        # off phase: pause so SLAM can integrate a clean scan.
+        if elapsed >= self.turn_off_duration:
+            self.turn_phase = "on"
+            self.turn_phase_start = now
+            return angular_z
+        return 0.0
+
+    def reset_pulse(self):
+        self.turn_phase = "off"
+        self.turn_phase_start = None
 
     @staticmethod
     def remap_deadband(
