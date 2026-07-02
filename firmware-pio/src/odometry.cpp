@@ -35,7 +35,7 @@ static float wrapPi(float angle)
 static void sendTeleplotOdomDebug(unsigned long dPBL, unsigned long dPBR,
                                   unsigned long dPFL, unsigned long dPFR,
                                   float dPL, float dPR,
-                                  float xNow, float yNow, float thetaNow)
+                                  float xNow, float yNow)
 {
 #if TELEMETRY_MODE == TELEMETRY_MODE_TELEPLOT_DEBUG
     Serial.print(">dPBL:");
@@ -54,8 +54,6 @@ static void sendTeleplotOdomDebug(unsigned long dPBL, unsigned long dPBR,
     Serial.println(xNow, 6);
     Serial.print(">Y:");
     Serial.println(yNow, 6);
-    Serial.print(">TH:");
-    Serial.println(thetaNow, 6);
 #endif
 }
 
@@ -141,7 +139,7 @@ void updateOdometry()
     theta = imuTheta;
     totalDistL_M += dL;
     totalDistR_M += dR;
-    sendTeleplotOdomDebug(dPBL, dPBR, dPFL, dPFR, dPL, dPR, x, y, theta);
+    sendTeleplotOdomDebug(dPBL, dPBR, dPFL, dPFR, dPL, dPR, x, y);
 }
 
 float getOdomX() { return x; }

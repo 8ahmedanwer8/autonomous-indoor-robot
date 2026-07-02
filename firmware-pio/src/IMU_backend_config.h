@@ -1,0 +1,8 @@
+#pragma once
+
+#define IMU_BACKEND_MPU6500 1
+#define IMU_BACKEND_ICM20948 2
+
+#ifndef IMU_BACKEND
+#define IMU_BACKEND IMU_BACKEND_ICM20948
+#endif

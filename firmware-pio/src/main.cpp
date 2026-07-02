@@ -5,7 +5,7 @@
 #include "telemetry_config.h"
 
 #define BAUD 115200
-#define CMD_TIMEOUT_MS 800
+#define CMD_TIMEOUT_MS 400
 #define ODOM_TX_INTERVAL_MS 100
 
 enum Mode : uint8_t
@@ -20,7 +20,7 @@ static uint32_t lastCmdMs = 0;
 static uint8_t lastIrBtn = 0;
 static uint32_t lastIrBtnMs = 0;
 
-uint8_t g_speed = 130;
+uint8_t g_speed = 90; // slow it down for testing orignal was 130
 
 DeviceDriverSet_Motor Motor;
 DeviceDriverSet_IRrecv AppIRrecv;
@@ -57,6 +57,9 @@ static void sendOdomPacket()
 
   lastTxMs = now;
 
+  const unsigned long leftPulses = getLeftPulses();
+  const unsigned long rightPulses = getRightPulses();
+
   Serial.print(F("ODOM,"));
   Serial.print(now);
   Serial.print(',');
@@ -67,6 +70,22 @@ static void sendOdomPacket()
   Serial.print(getOdomTheta(), 6);
   Serial.print(',');
   Serial.print(getImuGyroZ_radps(), 6);
+  Serial.print(',');
+  Serial.print(leftPulses);
+  Serial.print(',');
+  Serial.print(rightPulses);
+  Serial.print(',');
+  Serial.print(getImuMagX_uT(), 6);
+  Serial.print(',');
+  Serial.print(getImuMagY_uT(), 6);
+  Serial.print(',');
+  Serial.print(getImuMagZ_uT(), 6);
+  Serial.print(',');
+  Serial.print(getImuAccelX_mps2(), 6);
+  Serial.print(',');
+  Serial.print(getImuAccelY_mps2(), 6);
+  Serial.print(',');
+  Serial.print(getImuAccelZ_mps2(), 6);
   Serial.print(',');
   Serial.println(isImuReady() ? 1 : 0);
 #endif
@@ -359,6 +378,15 @@ void handleSerialJetson()
 
         L = constrain(L, -255, 255);
         R = constrain(R, -255, 255);
+
+        // ---------- new zero‑speed handling ----------
+        if (L == 0 && R == 0)
+        {
+          motorsStop(); // disable driver → active brake / standby
+          lastCmdMs = millis();
+          return;
+        }
+        // ---------------------------------------------
 
         setCommandSigns((L >= 0) ? +1 : -1, (R >= 0) ? +1 : -1);
 
