@@ -1,4 +1,10 @@
 <launch>
+  <arg name="launch_lidar" default="true"/>
+  <arg name="launch_camera" default="true"/>
+  <arg name="lidar_serial_port" default="/dev/ttyUSB0"/>
+  <arg name="lidar_serial_baudrate" default="1000000"/>
+  <arg name="lidar_frame_id" default="laser"/>
+
   <!-- Robot description from xacro -->
   <param name="robot_description"
          command="$(find xacro)/xacro '$(find elegoo_description)/urdf/elegoo.urdf.xacro'" />
@@ -7,16 +13,17 @@
   <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" />
 
   <!-- RPLidar node -->
-  <node pkg="rplidar_ros" type="rplidarNode" name="rplidar">
-    <param name="serial_port" value="/dev/ttyUSB0" />
-    <param name="serial_baudrate" value="1000000" />
-    <param name="frame_id" value="laser" />
-  </node>
+  <include if="$(arg launch_lidar)" file="$(find elegoo_description)/launch/rplidar.launch">
+    <arg name="serial_port" value="$(arg lidar_serial_port)"/>
+    <arg name="serial_baudrate" value="$(arg lidar_serial_baudrate)"/>
+    <arg name="frame_id" value="$(arg lidar_frame_id)"/>
+  </include>
 
   <!-- Realsense driver -->
-  <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+  <include if="$(arg launch_camera)" file="$(find realsense2_camera)/launch/rs_camera.launch">
     <!-- Optional: if you need to override base frame name, you can set params here -->
     <!-- <arg name="camera" default="camera" /> -->
   </include>
 
 </launch>
+

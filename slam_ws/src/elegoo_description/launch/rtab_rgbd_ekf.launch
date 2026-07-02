@@ -1,0 +1,130 @@
+<launch>
+  <!-- ========= RealSense ========= -->
+  <arg name="launch_camera" default="true"/>
+  <arg name="camera_name" default="camera"/>
+  <arg name="align_depth" default="true"/>
+  <arg name="enable_sync" default="true"/>
+  <arg name="camera_initial_reset" default="false"/>
+  <arg name="camera_depth_width" default="-1"/>
+  <arg name="camera_depth_height" default="-1"/>
+  <arg name="camera_depth_fps" default="-1"/>
+  <arg name="camera_color_width" default="-1"/>
+  <arg name="camera_color_height" default="-1"/>
+  <arg name="camera_color_fps" default="-1"/>
+  <arg name="camera_publish_tf" default="true"/>
+  <arg name="publish_odom_tf" default="false"/>
+  <arg name="tf_publish_rate" default="30"/>
+
+  <include if="$(arg launch_camera)" file="$(find realsense2_camera)/launch/rs_camera.launch">
+    <arg name="camera"          value="$(arg camera_name)"/>
+    <arg name="align_depth"     value="$(arg align_depth)"/>
+    <arg name="enable_sync"     value="$(arg enable_sync)"/>
+    <arg name="initial_reset"   value="$(arg camera_initial_reset)"/>
+    <arg name="depth_width"     value="$(arg camera_depth_width)"/>
+    <arg name="depth_height"    value="$(arg camera_depth_height)"/>
+    <arg name="depth_fps"       value="$(arg camera_depth_fps)"/>
+    <arg name="color_width"     value="$(arg camera_color_width)"/>
+    <arg name="color_height"    value="$(arg camera_color_height)"/>
+    <arg name="color_fps"       value="$(arg camera_color_fps)"/>
+    <arg name="publish_tf"      value="$(arg camera_publish_tf)"/>
+    <arg name="publish_odom_tf" value="$(arg publish_odom_tf)"/>
+    <arg name="tf_publish_rate" value="$(arg tf_publish_rate)"/>
+  </include>
+
+  <!-- ========= RTAB-Map inputs and mode ========= -->
+  <arg name="rgb_topic"         default="/camera/color/image_raw"/>
+  <arg name="depth_topic"       default="/camera/aligned_depth_to_color/image_raw"/>
+  <arg name="camera_info_topic" default="/camera/color/camera_info"/>
+  <arg name="odom_topic"        default="/odometry/filtered"/>
+  <arg name="scan_topic"        default="/scan"/>
+
+  <arg name="frame_id"      default="base_link"/>
+  <arg name="odom_frame_id" default="odom"/>
+  <arg name="map_frame_id"  default="map"/>
+
+  <arg name="approx_sync"     default="true"/>
+  <arg name="approx_sync_max_interval" default="0.01"/>
+  <arg name="queue_size"      default="30"/>
+  <arg name="sync_queue_size" default="30"/>
+  <arg name="localization"    default="false"/>
+  <arg name="database_path"   default="$(env HOME)/.ros/elegoo_rtabmap.db"/>
+  <arg if="$(arg localization)" name="database_args" default=""/>
+  <arg unless="$(arg localization)" name="database_args" default="--delete_db_on_start"/>
+
+  <!-- ========= RTAB-Map ========= -->
+  <group ns="rtabmap">
+    <!-- 1) rgbd_sync: produces /rtabmap/rgbd_image -->
+    <node pkg="rtabmap_ros" type="rgbd_sync" name="rgbd_sync" output="screen">
+      <param name="approx_sync" value="$(arg approx_sync)"/>
+      <param name="approx_sync_max_interval" value="$(arg approx_sync_max_interval)"/>
+      <param name="queue_size" value="$(arg queue_size)"/>
+      <param name="sync_queue_size" value="$(arg sync_queue_size)"/>
+
+      <remap from="rgb/image"       to="$(arg rgb_topic)"/>
+      <remap from="depth/image"     to="$(arg depth_topic)"/>
+      <remap from="rgb/camera_info" to="$(arg camera_info_topic)"/>
+    </node>
+
+    <!-- 2) RTAB-Map consumes synced rgbd_image + EKF odometry -->
+    <node pkg="rtabmap_ros" type="rtabmap" name="rtabmap" output="screen"
+          args="$(arg database_args)">
+      <param name="frame_id" value="$(arg frame_id)"/>
+      <param name="odom_frame_id" value="$(arg odom_frame_id)"/>
+      <param name="map_frame_id" value="$(arg map_frame_id)"/>
+      <param name="database_path" value="$(arg database_path)"/>
+
+      <param name="subscribe_rgbd" value="true"/>
+      <param name="subscribe_depth" value="false"/>
+      <param name="subscribe_rgb" value="false"/>
+      <param name="subscribe_stereo" value="false"/>
+      <param name="subscribe_scan" value="true"/>
+
+      <!-- Use laser/ICP registration instead of visual registration -->
+      <param name="Reg/Strategy" value="1"/>
+
+
+
+      <param name="approx_sync" value="$(arg approx_sync)"/>
+      <param name="queue_size" value="$(arg queue_size)"/>
+      <param name="sync_queue_size" value="$(arg sync_queue_size)"/>
+      <remap from="rgbd_image" to="rgbd_image"/>
+      <remap from="odom" to="$(arg odom_topic)"/>
+      <remap from="scan" to="$(arg scan_topic)"/>
+
+      <param name="publish_tf" value="true"/>
+
+      <param name="tf_delay" value="0.10"/>
+      <param name="wait_for_transform" value="true"/>
+      <param name="wait_for_transform_duration" value="0.5"/>
+
+      <param name="RGBD/NeighborLinkRefining" value="true"/>
+      <param name="RGBD/ProximityBySpace" value="true"/>
+
+      <!-- Force ground-robot / 2D behavior -->
+      <param name="Reg/Force3DoF" value="true"/>
+      <param name="RGBD/ForceOdom3DoF" value="true"/>
+      <param name="Optimizer/Slam2D" value="true"/>
+
+      <!-- Generate the occupancy grid using lidar and depth camera -->
+      <param name="Grid/Sensor" type="string" value="2"/>
+
+      <!-- Ignore measurements extremely close to the sensor -->
+      <param name="Grid/RangeMin" type="string" value="0.10"/>
+
+      <!-- Maximum distance used for occupancy-grid generation -->
+      <param name="Grid/RangeMax" type="string" value="3.0"/>
+
+      <param name="odom_sensor_sync" value="true"/>
+      <param name="Rtabmap/DetectionRate" value="2.0"/>
+
+
+      <param unless="$(arg localization)" name="Mem/IncrementalMemory" type="string" value="true"/>
+      <param if="$(arg localization)" name="Mem/IncrementalMemory" type="string" value="false"/>
+      <param if="$(arg localization)" name="Mem/InitWMWithAllNodes" type="string" value="true"/>
+      <param if="$(arg localization)" name="Mem/LocalizationDataSaved" type="string" value="false"/>
+    </node>
+
+  </group>
+</launch>
+
+

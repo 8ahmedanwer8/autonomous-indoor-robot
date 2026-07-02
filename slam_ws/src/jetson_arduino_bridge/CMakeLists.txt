@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(elegoo_description)
+project(jetson_arduino_bridge)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -8,13 +8,9 @@ project(elegoo_description)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  gazebo_ros
-  joint_state_publisher
-  robot_state_publisher
-  roscpp
+  geometry_msgs
   rospy
-  urdf
-  xacro
+  sensor_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -74,7 +70,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
+#   geometry_msgs#   sensor_msgs
 # )
 
 ################################################
@@ -108,8 +104,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES elegoo_description
-#  CATKIN_DEPENDS gazebo_ros joint_state_publisher robot_state_publisher roscpp rospy urdf xacro
+#  LIBRARIES jetson_arduino_bridge
+#  CATKIN_DEPENDS geometry_msgs rospy sensor_msgs
 #  DEPENDS system_lib
 )
 
@@ -126,7 +122,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/elegoo_description.cpp
+#   src/${PROJECT_NAME}/jetson_arduino_bridge.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -137,7 +133,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/elegoo_description_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/jetson_arduino_bridge_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -167,11 +163,6 @@ include_directories(
 #   scripts/my_python_script
 #   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
-
-catkin_install_python(PROGRAMS
-  scripts/cmd_vel_deadband.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
@@ -206,7 +197,7 @@ catkin_install_python(PROGRAMS
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_elegoo_description.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_jetson_arduino_bridge.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

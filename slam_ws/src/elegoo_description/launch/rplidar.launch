@@ -1,0 +1,16 @@
+<launch>
+  <arg name="serial_port" default="/dev/ttyUSB2"/>
+  <arg name="serial_baudrate" default="1000000"/>
+  <arg name="frame_id" default="laser"/>
+
+  <node pkg="rplidar_ros" type="rplidarNode" name="rplidar" output="screen">
+    <param name="serial_port" value="$(arg serial_port)"/>
+    <param name="serial_baudrate" value="$(arg serial_baudrate)"/>
+    <param name="frame_id" value="$(arg frame_id)"/>
+
+    <param name="scan_mode" value="Standard"/>
+    <param name="scan_frequency" value="8.0"/>
+
+  </node>
+</launch>
+

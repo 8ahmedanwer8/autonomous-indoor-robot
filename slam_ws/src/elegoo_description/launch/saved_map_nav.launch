@@ -1,0 +1,107 @@
+<launch>
+  <arg name="database_path" default="$(env HOME)/.ros/elegoo_rtabmap.db"/>
+  <arg name="imu_raw_topic" default="/imu/data"/>
+  <arg name="camera_initial_reset" default="true"/>
+  <arg name="camera_depth_width" default="640"/>
+  <arg name="camera_depth_height" default="480"/>
+  <arg name="camera_depth_fps" default="15"/>
+  <arg name="camera_color_width" default="640"/>
+  <arg name="camera_color_height" default="480"/>
+  <arg name="camera_color_fps" default="15"/>
+  <arg name="approx_sync_max_interval" default="0.04"/>
+  <arg name="lidar_serial_port" default="/dev/ttyUSB0"/>
+  <arg name="lidar_serial_baudrate" default="1000000"/>
+  <arg name="lidar_frame_id" default="laser"/>
+  <arg name="use_cmd_vel_deadband" default="true"/>
+  <arg name="cmd_vel_nav_topic" default="/cmd_vel_nav"/>
+  <arg name="cmd_vel_output_topic" default="/cmd_vel"/>
+
+  <!-- move_base planner-side values -->
+  <arg name="cmd_vel_in_min_x" default="0.04"/>
+  <arg name="cmd_vel_in_max_x" default="0.15"/>
+  <arg name="cmd_vel_in_min_theta" default="-0.90"/>
+  <arg name="cmd_vel_in_max_theta" default="0.90"/>
+  <arg name="cmd_vel_in_min_theta_driving" default="0.10"/>
+  <arg name="cmd_vel_in_max_theta_driving" default="0.90"/>
+
+
+  <!-- motor/driver-side values -->
+  <arg name="cmd_vel_out_min_x" default="0.10"/>
+  <arg name="cmd_vel_out_max_x" default="0.15"/>
+  <arg name="cmd_vel_out_min_theta" default="3.00"/>
+  <arg name="cmd_vel_out_max_theta" default="3.50"/>
+  <arg name="cmd_vel_out_min_theta_driving" default="0.80"/>
+  <arg name="cmd_vel_out_max_theta_driving" default="1.80"/>
+
+
+  <include file="$(find elegoo_description)/launch/elegoo_bringup.launch">
+    <arg name="launch_camera" value="false"/>
+    <arg name="lidar_serial_port" value="$(arg lidar_serial_port)"/>
+    <arg name="lidar_serial_baudrate" value="$(arg lidar_serial_baudrate)"/>
+    <arg name="lidar_frame_id" value="$(arg lidar_frame_id)"/>
+  </include>
+  <include file="$(find elegoo_description)/launch/localization.launch">
+    <arg name="imu_raw_topic" value="$(arg imu_raw_topic)"/>
+  </include>
+
+  <include file="$(find elegoo_description)/launch/rtab_rgbd_ekf.launch">
+    <arg name="launch_camera" value="true"/>
+    <arg name="localization" value="true"/>
+    <arg name="database_path" value="$(arg database_path)"/>
+    <arg name="camera_initial_reset" value="$(arg camera_initial_reset)"/>
+    <arg name="camera_depth_width" value="$(arg camera_depth_width)"/>
+    <arg name="camera_depth_height" value="$(arg camera_depth_height)"/>
+    <arg name="camera_depth_fps" value="$(arg camera_depth_fps)"/>
+    <arg name="camera_color_width" value="$(arg camera_color_width)"/>
+    <arg name="camera_color_height" value="$(arg camera_color_height)"/>
+    <arg name="camera_color_fps" value="$(arg camera_color_fps)"/>
+    <arg name="approx_sync_max_interval" value="$(arg approx_sync_max_interval)"/>
+  </include>
+
+  <!-- Forward RViz 2D Pose Estimate to RTAB-Map localization -->
+  <node pkg="topic_tools"
+        type="relay"
+        name="initialpose_to_rtabmap"
+        args="/initialpose /rtabmap/initialpose"
+        output="screen"/>
+
+  <include file="$(find elegoo_description)/launch/p2p_navigation/move_base.launch">
+    <arg unless="$(arg use_cmd_vel_deadband)" name="cmd_vel_topic" value="$(arg cmd_vel_output_topic)"/>
+    <arg if="$(arg use_cmd_vel_deadband)" name="cmd_vel_topic" value="$(arg cmd_vel_nav_topic)"/>
+  </include>
+
+  <node if="$(arg use_cmd_vel_deadband)"
+        pkg="elegoo_description"
+        type="cmd_vel_deadband.py"
+        name="cmd_vel_deadband"
+        output="screen">
+
+    <param name="input_topic" value="$(arg cmd_vel_nav_topic)"/>
+    <param name="output_topic" value="$(arg cmd_vel_output_topic)"/>
+
+    <param name="in_min_x" value="$(arg cmd_vel_in_min_x)"/>
+    <param name="in_max_x" value="$(arg cmd_vel_in_max_x)"/>
+    <param name="out_min_x" value="$(arg cmd_vel_out_min_x)"/>
+    <param name="out_max_x" value="$(arg cmd_vel_out_max_x)"/>
+
+    <param name="in_min_theta" value="$(arg cmd_vel_in_min_theta)"/>
+    <param name="in_max_theta" value="$(arg cmd_vel_in_max_theta)"/>
+    <param name="out_min_theta" value="$(arg cmd_vel_out_min_theta)"/>
+    <param name="out_max_theta" value="$(arg cmd_vel_out_max_theta)"/>
+
+    <param name="in_min_theta_driving" value="$(arg cmd_vel_in_min_theta_driving)"/>
+    <param name="in_max_theta_driving" value="$(arg cmd_vel_in_max_theta_driving)"/>
+    <param name="out_min_theta_driving" value="$(arg cmd_vel_out_min_theta_driving)"/>
+    <param name="out_max_theta_driving" value="$(arg cmd_vel_out_max_theta_driving)"/>
+
+    <param name="x_deadband" value="0.005"/>
+    <param name="theta_deadband" value="0.02"/>
+    <param name="driving_x_threshold" value="0.02"/>
+
+    <param name="max_x_step" value="0.20"/>
+    <param name="max_theta_step" value="10.0"/>
+    <param name="cmd_timeout" value="0.6"/>
+  </node>
+
+</launch>
+
