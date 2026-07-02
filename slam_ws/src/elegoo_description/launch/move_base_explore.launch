@@ -1,0 +1,36 @@
+<launch>
+  <arg name="map_topic" default="/rtabmap/grid_map"/>
+  <arg name="scan_topic" default="/scan"/>
+  <arg name="scan_frame" default="laser"/>
+  <arg name="cmd_vel_topic" default="/cmd_vel"/>
+
+  <node pkg="move_base"
+        type="move_base"
+        name="move_base"
+        output="screen">
+    <rosparam file="$(find elegoo_description)/config/explore_navigation/costmap_common.yaml"
+              command="load"
+              ns="global_costmap"/>
+    <rosparam file="$(find elegoo_description)/config/explore_navigation/costmap_common.yaml"
+              command="load"
+              ns="local_costmap"/>
+    <rosparam file="$(find elegoo_description)/config/explore_navigation/global_costmap.yaml"
+              command="load"/>
+    <rosparam file="$(find elegoo_description)/config/explore_navigation/local_costmap.yaml"
+              command="load"/>
+    <rosparam file="$(find elegoo_description)/config/explore_navigation/base_local_planner.yaml"
+              command="load"/>
+    <rosparam file="$(find elegoo_description)/config/explore_navigation/move_base.yaml"
+              command="load"/>
+
+    <param name="global_costmap/static_layer/map_topic" value="$(arg map_topic)"/>
+    <param name="global_costmap/obstacle_layer/laser_scan/topic" value="$(arg scan_topic)"/>
+    <param name="global_costmap/obstacle_layer/laser_scan/sensor_frame" value="$(arg scan_frame)"/>
+    <param name="local_costmap/obstacle_layer/laser_scan/topic" value="$(arg scan_topic)"/>
+    <param name="local_costmap/obstacle_layer/laser_scan/sensor_frame" value="$(arg scan_frame)"/>
+
+    <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
+    <remap from="odom" to="/odometry/filtered"/>
+  </node>
+</launch>
+

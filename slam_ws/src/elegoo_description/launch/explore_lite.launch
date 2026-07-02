@@ -1,0 +1,26 @@
+<launch>
+  <arg name="costmap_topic" default="/rtabmap/grid_map"/>
+  <arg name="costmap_updates_topic" default="/rtabmap/grid_map_updates"/>
+  <arg name="robot_base_frame" default="base_link"/>
+
+  <arg name="planner_frequency" default="0.20"/>
+  <arg name="progress_timeout" default="30.0"/>
+  <arg name="min_frontier_size" default="0.05"/>
+
+  <node pkg="explore_lite"
+        type="explore"
+        name="explore"
+        output="screen">
+    <param name="robot_base_frame" value="$(arg robot_base_frame)"/>
+    <param name="costmap_topic" value="$(arg costmap_topic)"/>
+    <param name="costmap_updates_topic" value="$(arg costmap_updates_topic)"/>
+    <param name="visualize" value="true"/>
+
+    <param name="planner_frequency" value="$(arg planner_frequency)"/>
+    <param name="progress_timeout" value="$(arg progress_timeout)"/>
+    <param name="potential_scale" value="3.0"/>
+    <param name="orientation_scale" value="0.0"/>
+    <param name="gain_scale" value="1.0"/>
+    <param name="min_frontier_size" value="$(arg min_frontier_size)"/>
+  </node>
+</launch>

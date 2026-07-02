@@ -17,6 +17,9 @@ RUN apt-get update && \
       nano \
       vim \
       x11-apps \
+      libnss-mdns \
+      avahi-utils \
+      iputils-ping \
       python-rosdep \
       python-rosinstall \
       python-rosinstall-generator \

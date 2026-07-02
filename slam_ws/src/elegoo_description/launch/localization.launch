@@ -1,5 +1,14 @@
 <launch>
-  <include file="$(find elegoo_description)/launch/imu_filter_madgwick.launch"/>
+  <arg name="imu_raw_topic" default="/imu/data"/>
+  <arg name="mag_topic" default="/imu/mag"/>
+  <arg name="imu_filtered_topic" default="/imu/data_filtered"/>
+
+  <include file="$(find elegoo_description)/launch/imu_filter_madgwick.launch">
+    <arg name="imu_raw_topic" value="$(arg imu_raw_topic)"/>
+    <arg name="mag_topic" value="$(arg mag_topic)"/>
+    <arg name="imu_filtered_topic" value="$(arg imu_filtered_topic)"/>
+  </include>
+
   <include file="$(find elegoo_description)/launch/ekf_localization.launch"/>
 </launch>
 

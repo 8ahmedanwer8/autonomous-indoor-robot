@@ -64,10 +64,13 @@
   <build_export_depend>urdf</build_export_depend>
   <build_export_depend>xacro</build_export_depend>
   <exec_depend>base_local_planner</exec_depend>
+  <exec_depend>explore_lite</exec_depend>
+  <exec_depend>depthimage_to_laserscan</exec_depend>
   <exec_depend>costmap_2d</exec_depend>
   <exec_depend>gazebo_ros</exec_depend>
   <exec_depend>move_base</exec_depend>
   <exec_depend>navfn</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>imu_filter_madgwick</exec_depend>
   <exec_depend>joint_state_publisher</exec_depend>
   <exec_depend>robot_localization</exec_depend>

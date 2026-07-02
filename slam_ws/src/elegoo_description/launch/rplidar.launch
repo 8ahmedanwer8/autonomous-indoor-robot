@@ -1,5 +1,5 @@
 <launch>
-  <arg name="serial_port" default="/dev/ttyUSB0"/>
+  <arg name="serial_port" default="/dev/ttyUSB2"/>
   <arg name="serial_baudrate" default="1000000"/>
   <arg name="frame_id" default="laser"/>
 

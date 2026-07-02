@@ -17,6 +17,9 @@ docker run -it --rm \
   --runtime=nvidia \
   --net=host \
   --privileged \
+  -e ROS_MASTER_URI=http://ahmedski-desktop.local:11311 \
+  -e ROS_HOSTNAME=ahmedski-desktop.local \
+  -v /run/avahi-daemon:/run/avahi-daemon:ro \
   -e NVIDIA_VISIBLE_DEVICES=all \
   -e NVIDIA_DRIVER_CAPABILITIES=all \
   -e DISPLAY="$DISPLAY" \
