@@ -1,0 +1,62 @@
+<launch>
+  <!-- Standalone cmd_vel_deadband remapper for tuning from the terminal.
+       Launch the rest of the stack with use_cmd_vel_deadband:=false, then run
+       this separately so you can tweak pulsed_turn / durations without editing
+       the main launch. Param values mirror explore_mapping.launch. -->
+  <arg name="input_topic" default="/cmd_vel_nav"/>
+  <arg name="output_topic" default="/cmd_vel"/>
+  <arg name="pulsed_turn" default="false"/>
+  <arg name="turn_on_duration" default="0.5"/>
+  <arg name="turn_off_duration" default="0.5"/>
+  <arg name="rate" default="20.0"/>
+
+  <!-- planner-side values -->
+  <arg name="in_min_x" default="0.04"/>
+  <arg name="in_max_x" default="0.15"/>
+  <arg name="in_min_theta" default="-0.90"/>
+  <arg name="in_max_theta" default="0.90"/>
+  <arg name="in_min_theta_driving" default="0.10"/>
+  <arg name="in_max_theta_driving" default="0.90"/>
+
+  <!-- motor/driver-side values -->
+  <arg name="out_min_x" default="0.10"/>
+  <arg name="out_max_x" default="0.13"/>
+  <arg name="out_min_theta" default="2.90"/>
+  <arg name="out_max_theta" default="3.20"/>
+  <arg name="out_min_theta_driving" default="0.00"/>
+  <arg name="out_max_theta_driving" default="0.20"/>
+
+  <node pkg="elegoo_description"
+        type="cmd_vel_deadband.py"
+        name="cmd_vel_deadband"
+        output="screen">
+
+    <param name="input_topic" value="$(arg input_topic)"/>
+    <param name="output_topic" value="$(arg output_topic)"/>
+
+    <param name="in_min_x" value="$(arg in_min_x)"/>
+    <param name="in_max_x" value="$(arg in_max_x)"/>
+    <param name="out_min_x" value="$(arg out_min_x)"/>
+    <param name="out_max_x" value="$(arg out_max_x)"/>
+
+    <param name="in_min_theta" value="$(arg in_min_theta)"/>
+    <param name="in_max_theta" value="$(arg in_max_theta)"/>
+    <param name="out_min_theta" value="$(arg out_min_theta)"/>
+    <param name="out_max_theta" value="$(arg out_max_theta)"/>
+
+    <param name="in_min_theta_driving" value="$(arg in_min_theta_driving)"/>
+    <param name="in_max_theta_driving" value="$(arg in_max_theta_driving)"/>
+    <param name="out_min_theta_driving" value="$(arg out_min_theta_driving)"/>
+    <param name="out_max_theta_driving" value="$(arg out_max_theta_driving)"/>
+
+    <param name="x_deadband" value="0.005"/>
+    <param name="theta_deadband" value="0.02"/>
+    <param name="driving_x_threshold" value="0.02"/>
+    <param name="cmd_timeout" value="0.6"/>
+
+    <param name="pulsed_turn" value="$(arg pulsed_turn)"/>
+    <param name="turn_on_duration" value="$(arg turn_on_duration)"/>
+    <param name="turn_off_duration" value="$(arg turn_off_duration)"/>
+    <param name="rate" value="$(arg rate)"/>
+  </node>
+</launch>
