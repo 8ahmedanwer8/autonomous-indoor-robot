@@ -1,5 +1,6 @@
 <launch>
   <arg name="database_path" default="$(env HOME)/.ros/elegoo_rtabmap.db"/>
+  <arg name="continue_map" default="false"/>
   <arg name="use_explore_lite" default="false"/>
   <arg name="imu_raw_topic" default="/imu/data"/>
   <arg name="lidar_serial_port" default="/dev/ttyUSB0"/>
@@ -46,6 +47,7 @@
     <arg name="launch_camera" value="true"/>
     <arg name="localization" value="false"/>
     <arg name="database_path" value="$(arg database_path)"/>
+    <arg name="continue_map" value="$(arg continue_map)"/>
   </include>
 
   <include file="$(find elegoo_description)/launch/move_base_explore.launch">

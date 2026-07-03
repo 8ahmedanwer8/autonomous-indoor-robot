@@ -47,9 +47,12 @@
   <arg name="queue_size"      default="30"/>
   <arg name="sync_queue_size" default="30"/>
   <arg name="localization"    default="false"/>
+  <arg name="continue_map"    default="false"/>
   <arg name="database_path"   default="$(env HOME)/.ros/elegoo_rtabmap.db"/>
-  <arg if="$(arg localization)" name="database_args" default=""/>
-  <arg unless="$(arg localization)" name="database_args" default="--delete_db_on_start"/>
+
+  <!-- Fresh map: delete the db on start. Continue map / localization: load
+       the existing db and keep building (or localize against) it. -->
+  <arg name="database_args" default="$(eval '' if localization == 'true' or continue_map == 'true' else '--delete_db_on_start')"/>
 
   <!-- ========= RTAB-Map ========= -->
   <group ns="rtabmap">
