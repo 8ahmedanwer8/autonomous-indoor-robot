@@ -17,6 +17,11 @@
   <arg name="turn_off_duration" default="0.5"/>
   <arg name="deadband_rate" default="20.0"/>
 
+  <!-- Settle before turn: stop briefly when switching from driving to an
+       in-place turn so the camera/SLAM settles before rotating. -->
+  <arg name="settle_before_turn" default="false"/>
+  <arg name="settle_duration" default="1.5"/>
+
   <!-- move_base planner-side values -->
   <arg name="cmd_vel_in_min_x" default="0.04"/>
   <arg name="cmd_vel_in_max_x" default="0.15"/>
@@ -90,6 +95,9 @@
     <param name="turn_on_duration" value="$(arg turn_on_duration)"/>
     <param name="turn_off_duration" value="$(arg turn_off_duration)"/>
     <param name="rate" value="$(arg deadband_rate)"/>
+
+    <param name="settle_before_turn" value="$(arg settle_before_turn)"/>
+    <param name="settle_duration" value="$(arg settle_duration)"/>
   </node>
 
   <node if="$(arg use_explore_lite)"

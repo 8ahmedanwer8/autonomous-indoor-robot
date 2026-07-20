@@ -78,6 +78,18 @@ class CmdVelDeadband(object):
         self.turn_phase = "off"
         self.turn_phase_start = None
 
+        # Settle before turn: when transitioning from driving into an in-place
+        # turn, stop for settle_duration so the camera/SLAM can settle before
+        # the robot starts rotating. Only effective when pulsed_turn is on.
+        self.settle_before_turn = bool(
+            rospy.get_param("~settle_before_turn", False)
+        )
+        self.settle_duration = float(
+            rospy.get_param("~settle_duration", 1.5)
+        )
+        self.motion_state = "idle"
+        self.settle_start = None
+
         self.pub = rospy.Publisher(
             self.output_topic,
             Twist,
@@ -135,8 +147,18 @@ class CmdVelDeadband(object):
             self.timer = rospy.Timer(
                 rospy.Duration(1.0 / self.rate), self.timer_cb
             )
+            if self.settle_before_turn:
+                rospy.loginfo(
+                    "settle-before-turn ENABLED: %.2fs stop before turning",
+                    self.settle_duration
+                )
         else:
             rospy.loginfo("pulsed turn disabled (continuous output)")
+            if self.settle_before_turn:
+                rospy.logwarn(
+                    "settle_before_turn is set but pulsed_turn is off; "
+                    "settle has no effect without the output timer."
+                )
 
     def cmd_cb(self, msg):
         if not self.pulsed_turn:
@@ -152,23 +174,73 @@ class CmdVelDeadband(object):
     def timer_cb(self, _event):
         now = rospy.Time.now()
 
-        # Planner went silent (or never spoke): stop and reset the phase.
+        # Planner went silent (or never spoke): stop and reset all state.
         if (now - self.last_input_time).to_sec() > self.cmd_timeout:
             self.pub.publish(Twist())
             self.reset_pulse()
+            self.motion_state = "idle"
+            self.settle_start = None
             return
 
         out = self.remap(self.last_input)
 
-        in_place_turn = (
-            abs(self.last_input.linear.x) <= self.driving_x_threshold
-            and abs(out.angular.z) > 0.0
-        )
-        if in_place_turn:
-            out.angular.z = self.pulse_turn(out.angular.z, now)
+        driving = abs(self.last_input.linear.x) > self.driving_x_threshold
+        turning = (not driving) and abs(out.angular.z) > 0.0
+        if driving:
+            intended = "driving"
+        elif turning:
+            intended = "turning"
         else:
-            self.reset_pulse()
+            intended = "idle"
 
+        # Drive the motion-state machine. The only special transition is
+        # driving -> turning: optionally stop and let the camera settle first.
+        if self.motion_state == "driving":
+            if intended == "turning":
+                if self.settle_before_turn:
+                    self.motion_state = "settling"
+                    self.settle_start = now
+                else:
+                    self.motion_state = "turning"
+                    self.reset_pulse()
+            elif intended == "idle":
+                self.motion_state = "idle"
+            # intended == "driving": stay driving
+        elif self.motion_state == "settling":
+            if intended == "driving":
+                self.motion_state = "driving"
+                self.settle_start = None
+            elif intended == "idle":
+                self.motion_state = "idle"
+                self.settle_start = None
+            elif (now - self.settle_start).to_sec() >= self.settle_duration:
+                self.motion_state = "turning"
+                self.reset_pulse()
+                self.settle_start = None
+            # else keep settling (turn still intended)
+        elif self.motion_state == "turning":
+            if intended != "turning":
+                self.motion_state = intended
+                self.reset_pulse()
+            # intended == "turning": keep pulsing
+        else:  # idle
+            if intended == "turning":
+                self.motion_state = "turning"
+                self.reset_pulse()
+            elif intended == "driving":
+                self.motion_state = "driving"
+            # intended == "idle": stay idle
+
+        # Emit output for the current state.
+        if self.motion_state == "settling":
+            self.pub.publish(Twist())
+            return
+        if self.motion_state == "turning":
+            out.angular.z = self.pulse_turn(out.angular.z, now)
+            self.pub.publish(out)
+            return
+        # driving or idle: pass the remapped command through (idle -> zeros).
+        self.reset_pulse()
         self.pub.publish(out)
 
     def remap(self, msg):
