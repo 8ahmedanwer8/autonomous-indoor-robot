@@ -34,6 +34,13 @@ presentation/*
 firmware-pio/.codex
 firmware-pio/all_code.txt
 firmware-pio/project_dump.txt
+project_dump_all.txt
+scripts/dump_project.sh
+
+# ROS / catkin build artifacts
+slam_ws/devel/
+slam_ws/install/
+slam_ws/build/
 
 # Binary installers
 *.deb

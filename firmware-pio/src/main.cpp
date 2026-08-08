@@ -20,7 +20,7 @@ static uint32_t lastCmdMs = 0;
 static uint8_t lastIrBtn = 0;
 static uint32_t lastIrBtnMs = 0;
 
-uint8_t g_speed = 90; // slow it down for testing orignal was 130
+uint8_t g_speed = 90; // reduced from 130 for testing
 
 DeviceDriverSet_Motor Motor;
 DeviceDriverSet_IRrecv AppIRrecv;
