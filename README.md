@@ -1,10 +1,12 @@
 # ROS-Based Indoor Mobile Robot for SLAM and Autonomous Navigation
 
-An Elegoo smart-car chassis turned into an autonomous mapping robot. An Arduino
-Nano handles low-level motor/encoder/IMU control; a Jetson Nano (Ubuntu 18.04)
-runs ROS Melodic (RTAB-Map SLAM, move_base, explore_lite) with an RPLidar S2 and
-Intel RealSense D435; a laptop runs a matching ROS container for development and
-teleoperation.
+A low-cost ROS-based indoor mobile robot for SLAM and autonomous navigation,
+designed to transport small items between user-selected indoor locations. It
+fuses RGB-D vision, 2D LiDAR, and encoder–IMU odometry for RTAB-Map SLAM. An
+Arduino Nano handles low-level motor/encoder/IMU control; a Jetson Nano
+(Ubuntu 18.04) runs ROS Melodic (RTAB-Map, move_base, explore_lite) with an
+RPLidar S2 and Intel RealSense D435; a laptop runs a matching ROS container for
+development and teleoperation.
 
 ## Hardware
 
