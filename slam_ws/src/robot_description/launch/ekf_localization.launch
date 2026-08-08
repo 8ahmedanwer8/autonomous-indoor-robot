@@ -1,5 +1,5 @@
 <launch>
-  <arg name="config" default="$(find elegoo_description)/config/ekf_odom.yaml"/>
+  <arg name="config" default="$(find robot_description)/config/ekf_odom.yaml"/>
 
   <node pkg="robot_localization"
         type="ekf_localization_node"

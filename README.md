@@ -39,7 +39,7 @@ platformio.ini       PlatformIO build config (board = nanoatmega328)
 ros-for-laptop/      Docker image + run script for the laptop ROS container
 ros-for-jetson/      Docker image + run script for the Jetson ROS container
 slam_ws/             catkin workspace
-  src/elegoo_description/   URDF, launch files, nav configs, cmd_vel_deadband node
+  src/robot_description/   URDF, launch files, nav configs, cmd_vel_deadband node
   src/jetson_arduino_bridge/  serial bridge: cmd_vel→Arduino, Arduino→odom/IMU
 ```
 
@@ -96,12 +96,12 @@ source devel/setup.bash
 
 ### Packages
 
-- **`elegoo_description`** — robot URDF (xacro), bringup/launch files, navigation
+- **`robot_description`** — robot URDF (xacro), bringup/launch files, navigation
   configs (point-to-point and explore modes), and the `cmd_vel_deadband` node.
 - **`jetson_arduino_bridge`** — `cmdvel_to_arduino.py` (Twist → serial → motors,
   serial → odom/IMU publishers + TF) and `odom_imu_debug_view.py`.
 
-### Launch files (in `elegoo_description/launch/`)
+### Launch files (in `robot_description/launch/`)
 
 - `explore_mapping.launch` — full mapping/exploration stack (RTAB-Map + EKF +
   move_base + optional explore_lite + deadband remapper).
@@ -123,7 +123,7 @@ source devel/setup.bash
 Example:
 
 ```bash
-roslaunch elegoo_description explore_mapping.launch \
+roslaunch robot_description explore_mapping.launch \
   use_explore_lite:=true \
   pulsed_turn:=true settle_before_turn:=true settle_duration:=1.5 \
   continue_map:=true
@@ -149,7 +149,7 @@ RealSense D435 runs with GPU/CUDA acceleration.
 
 ## Configuration & tuning
 
-- Nav configs live in `slam_ws/src/elegoo_description/config/`:
+- Nav configs live in `slam_ws/src/robot_description/config/`:
   `explore_navigation/` (exploration) and `p2p_navigation/` (point-to-point).
 - If move_base reports oscillation during long pulsed turns, raise
   `oscillation_timeout` in the relevant `move_base.yaml`.

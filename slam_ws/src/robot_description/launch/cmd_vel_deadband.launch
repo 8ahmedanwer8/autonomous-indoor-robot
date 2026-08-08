@@ -31,7 +31,7 @@
   <arg name="out_min_theta_driving" default="0.00"/>
   <arg name="out_max_theta_driving" default="0.20"/>
 
-  <node pkg="elegoo_description"
+  <node pkg="robot_description"
         type="cmd_vel_deadband.py"
         name="cmd_vel_deadband"
         output="screen">
