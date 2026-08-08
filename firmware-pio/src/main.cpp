@@ -300,7 +300,7 @@ static void motorsRight(uint8_t spd)
                                       control_enable);
 }
 
-// Map Elegoo button IDs → actions
+// Map IR remote button IDs → actions
 static void handleButton(uint8_t b)
 {
   switch (b)

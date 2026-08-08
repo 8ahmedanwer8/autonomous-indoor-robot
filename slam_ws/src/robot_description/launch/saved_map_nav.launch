@@ -1,5 +1,5 @@
 <launch>
-  <arg name="database_path" default="$(env HOME)/.ros/elegoo_rtabmap.db"/>
+  <arg name="database_path" default="$(env HOME)/.ros/robot_rtabmap.db"/>
   <arg name="imu_raw_topic" default="/imu/data"/>
   <arg name="camera_initial_reset" default="true"/>
   <arg name="camera_depth_width" default="640"/>
@@ -34,7 +34,7 @@
   <arg name="cmd_vel_out_max_theta_driving" default="1.80"/>
 
 
-  <include file="$(find robot_description)/launch/elegoo_bringup.launch">
+  <include file="$(find robot_description)/launch/robot_bringup.launch">
     <arg name="launch_camera" value="false"/>
     <arg name="lidar_serial_port" value="$(arg lidar_serial_port)"/>
     <arg name="lidar_serial_baudrate" value="$(arg lidar_serial_baudrate)"/>

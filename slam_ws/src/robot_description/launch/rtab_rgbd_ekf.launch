@@ -48,7 +48,7 @@
   <arg name="sync_queue_size" default="30"/>
   <arg name="localization"    default="false"/>
   <arg name="continue_map"    default="false"/>
-  <arg name="database_path"   default="$(env HOME)/.ros/elegoo_rtabmap.db"/>
+  <arg name="database_path"   default="$(env HOME)/.ros/robot_rtabmap.db"/>
 
   <!-- Fresh map: delete the db on start. Continue map / localization: load
        the existing db and keep building (or localize against) it. -->

@@ -7,7 +7,7 @@
 
   <!-- Robot description from xacro -->
   <param name="robot_description"
-         command="$(find xacro)/xacro '$(find robot_description)/urdf/elegoo.urdf.xacro'" />
+         command="$(find xacro)/xacro '$(find robot_description)/urdf/robot.urdf.xacro'" />
 
   <!-- Publish TF for all links/joints in URDF -->
   <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" />
