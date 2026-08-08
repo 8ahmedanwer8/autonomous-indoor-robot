@@ -1,4 +1,4 @@
-# ROS-Based Indoor Mobile Robot for SLAM and Autonomous Navigation
+# Autonomous Indoor Mobile Robot for SLAM and Navigation
 
 A low-cost ROS-based indoor mobile robot for SLAM and autonomous navigation,
 designed to transport small items between user-selected indoor locations. It
