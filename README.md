@@ -1,91 +1,223 @@
-# Autonomous Indoor Mobile Robot for SLAM and Navigation
+# ROS-Based Indoor Mobile Robot for SLAM and Autonomous Navigation
 
-A low-cost ROS-based indoor mobile robot for SLAM and autonomous navigation,
-designed to transport small items between user-selected indoor locations. It
-fuses RGB-D vision, 2D LiDAR, and encoder–IMU odometry for RTAB-Map SLAM. An
-Arduino Nano handles low-level motor/encoder/IMU control; a Jetson Nano
-(Ubuntu 18.04) runs ROS Melodic (RTAB-Map, move_base, explore_lite) with an
-RPLidar S2 and Intel RealSense D435; a laptop runs a matching ROS container for
-visualization and teleoperation.
+A low-cost ROS-based mobile robot capable of autonomous exploration, 2D/3D SLAM, localization, point-to-point navigation, and obstacle avoidance.
 
-## Hardware
+Built as a University of Windsor ELEC-4000 Capstone Design Project using a modified Elegoo Smart Robot Car V4, Jetson Nano, Intel RealSense D435, RPLIDAR S2, wheel encoders, an ICM-20948 IMU, and ROS Melodic.
 
-| Component                            | Role                         | Connected to                      |
-| ------------------------------------ | ---------------------------- | --------------------------------- |
-| Arduino Nano (ATmega328P)            | Motor/encoder/IMU firmware   | Jetson (USB serial)               |
-| TB6612 dual H-bridge                 | Drives the two DC motors     | Nano                              |
-| 4x wheel encoders (Hall)             | Odometry pulses              | Nano                              |
-| IMU (MPU6500 or ICM20948)            | Heading / gyro / accel       | Nano (I2C)                        |
-| RPLidar S2                           | 2D laser scan                | Jetson (USB)                      |
-| Intel RealSense D435                 | RGB-D for RTAB-Map           | Jetson (USB)                      |
-| Jetson Nano (Ubuntu 18.04)           | ROS master, SLAM, navigation | —                                 |
-| Laptop                               | Dev/teleop ROS container     | —                                 |
-| 3S LiPo (11.1 V) + DC buck converter | Power                        | steps down to motor/logic voltage |
+<p align="center">
+  <img src="robot.jpg" width="350" alt="Final autonomous mobile robot">
+</p>
 
-## System architecture
+The final prototype demonstrated:
 
-![System architecture](docs/system_architecture.png)
+* 2D occupancy-grid mapping
+* RGB-D 3D reconstruction
+* RTAB-Map loop closure
+* Saved-map localization
+* Point-to-point autonomous navigation
+* Frontier-based autonomous exploration
 
-> \_Diagram TBD
+---
 
-- **Command path:** planner → `/cmd_vel_nav` → `cmd_vel_deadband` (remap + pulsed turns) → `/cmd_vel` → `cmdvel_to_arduino` → serial `VEL,<L>,<R>` → motors.
-- **Odometry path:** Arduino streams `ODOM,...` packets → `cmdvel_to_arduino` publishes `/wheel_odom` + `/imu/data` → EKF fuses into `/odometry/filtered` → RTAB-Map & move_base.
+## Demo
 
-## Repository layout
+### Autonomous Exploration
 
+<p align="center">
+  <img src="exploration.gif" width="750" alt="Autonomous exploration demo">
+</p>
+
+The rover uses Explore Lite to detect frontiers between known and unknown regions of the map and automatically sends navigation goals to `move_base`. As the robot explores, RTAB-Map continuously expands the occupancy grid and RGB-D reconstruction.
+
+---
+
+### Point-to-Point Navigation
+
+<p align="center">
+  <img src="nav.gif" width="750" alt="Point-to-point navigation demo">
+</p>
+
+A previously generated RTAB-Map database can be loaded for localization. A destination is then selected in RViz and the robot plans and follows a path toward the goal while accounting for nearby obstacles.
+
+---
+
+## Mapping Results
+
+Representative real-world mapping results from an approximately **4–5 m × 4–5 m** indoor test environment:
+
+<p align="center">
+  <img src="maps.png" width="900" alt="Final 2D and 3D mapping results">
+</p>
+
+The left side shows the generated 2D occupancy grid and robot trajectory, while the right side shows the corresponding RGB-D 3D reconstruction.
+
+Mapping was performed autonomously using Explore Lite, with representative runs lasting roughly five minutes. RTAB-Map loop closure was achieved, and the resulting database was saved and later reused for localization and navigation.
+
+---
+
+## System Architecture
+
+<p align="center">
+  <img src="software_map.png" width="900" alt="ROS system architecture">
+</p>
+
+The system is divided between high-level autonomy on the Jetson Nano and low-level sensing and motor control on the Arduino Nano.
+
+### High-level autonomy
+
+The Jetson Nano runs ROS Melodic and handles:
+
+* RTAB-Map SLAM
+* `robot_localization` EKF
+* `move_base`
+* Explore Lite
+* RealSense D435 input
+* RPLIDAR S2 input
+* ROS-to-Arduino serial communication
+
+A laptop running a matching ROS environment is used for development, RViz visualization, monitoring, and teleoperation.
+
+### Low-level control
+
+The Arduino Nano handles:
+
+* Wheel encoder acquisition
+* ICM-20948 IMU acquisition
+* Motor commands
+* TB6612FNG control
+* Bidirectional serial communication with the Jetson
+
+The four drive motors are controlled as **left and right motor pairs**, producing differential/skid-steer-style motion.
+
+---
+
+## Hardware Architecture
+
+<p align="center">
+  <img src="hardware_map.png" width="900" alt="Robot hardware architecture">
+</p>
+
+| Component                 | Role                                     |
+| ------------------------- | ---------------------------------------- |
+| Elegoo Smart Robot Car V4 | Mobile base and drivetrain               |
+| Jetson Nano               | ROS, SLAM, localization and navigation   |
+| Arduino Nano              | Embedded motor and sensor interface      |
+| TB6612FNG                 | Dual H-bridge motor driver               |
+| 4× wheel encoders         | Wheel displacement measurements          |
+| ICM-20948                 | Gyroscope and accelerometer measurements |
+| Intel RealSense D435      | RGB-D sensing                            |
+| RPLIDAR S2                | 2D laser scanning and obstacle detection |
+| Powered USB hub           | Stable RealSense + RPLIDAR connectivity  |
+| LiPo supply + regulation  | Jetson and sensor-side power             |
+| Separate motor battery    | Drivetrain power                         |
+| Custom 3D-printed plates  | Electronics and sensor mounting          |
+
+The robot was heavily modified from the original Elegoo platform. The stock ultrasonic sensor, camera module, and control shield were removed, and four custom 3D-printed mounting plates were developed to support the added sensing, compute, power, and control hardware.
+
+---
+
+## ROS Data Flow
+
+### Navigation commands
+
+```text
+move_base / Explore Lite
+        ↓
+   /cmd_vel_nav
+        ↓
+ cmd_vel_deadband
+        ↓
+     /cmd_vel
+        ↓
+cmdvel_to_arduino
+        ↓
+    USB serial
+        ↓
+   Arduino Nano
+        ↓
+    TB6612FNG
+        ↓
+      Motors
 ```
-firmware-pio/        Arduino Nano firmware (PlatformIO)
-  src/                 motor driver, odometry, IMU backends, main loop
-  src/IMU_backend_config.h  select MPU6500 vs ICM20948 at compile time
-platformio.ini       PlatformIO build config (board = nanoatmega328)
-ros-for-laptop/      Docker image + run script for the laptop ROS container
-ros-for-jetson/      Docker image + run script for the Jetson ROS container
-slam_ws/             catkin workspace
-  src/robot_description/   URDF, launch files, nav configs, cmd_vel_deadband node
-  src/jetson_arduino_bridge/  serial bridge: cmd_vel→Arduino, Arduino→odom/IMU
+
+### State estimation
+
+```text
+Wheel encoders ─┐
+                ├──> Arduino Nano ──> Jetson serial bridge
+ICM-20948 ──────┘                         │
+                                         ├──> /wheel_odom
+                                         └──> /imu/data
+                                                  ↓
+                                         robot_localization
+                                                  ↓
+                                        /odometry/filtered
+                                                  ↓
+                                         RTAB-Map / move_base
 ```
 
-## Firmware (Arduino Nano)
+RTAB-Map provides the `map → odom` transform, while the EKF provides `odom → base_link`.
 
-Build with [PlatformIO](https://platformio.org/):
+---
+
+## Software Stack
+
+* ROS Melodic
+* RTAB-Map
+* move_base
+* Explore Lite
+* robot_localization
+* imu_filter_madgwick
+* Intel RealSense ROS
+* rplidar_ros
+* RViz
+* Gazebo
+* PlatformIO
+* Docker
+
+---
+
+## Repository Structure
+
+```text
+firmware-pio/
+└── Arduino Nano firmware
+    ├── motor control
+    ├── encoder odometry
+    └── IMU support
+
+ros-for-laptop/
+└── Laptop ROS/Docker environment
+
+ros-for-jetson/
+└── Jetson ROS/Docker environment
+
+slam_ws/
+└── catkin workspace
+    └── src/
+        ├── robot_description/
+        │   ├── URDF
+        │   ├── launch files
+        │   ├── navigation configs
+        │   └── cmd_vel_deadband
+        │
+        └── jetson_arduino_bridge/
+            └── ROS ↔ Arduino serial bridge
+```
+
+---
+
+## Quick Start
+
+### Build the Arduino firmware
 
 ```bash
-pio run -e uno          # build
-pio run -t upload       # flash (set upload_port in platformio.ini or pass -e)
+cd firmware-pio
+pio run
+pio run -t upload
 ```
 
-### Pin map
-
-| Function                | Nano pin            |
-| ----------------------- | ------------------- |
-| TB6612 PWMA (right PWM) | D5                  |
-| TB6612 AIN1 (right IN1) | D7                  |
-| TB6612 AIN2 (right IN2) | A2                  |
-| TB6612 PWMB (left PWM)  | D6                  |
-| TB6612 BIN1 (left IN1)  | D8                  |
-| TB6612 BIN2 (left IN2)  | A0                  |
-| TB6612 STBY (enable)    | D3                  |
-| Encoder back-left       | D12                 |
-| Encoder back-right      | D11                 |
-| Encoder front-right     | D10                 |
-| Encoder front-left      | D4                  |
-| IMU I2C                 | A4 (SDA) / A5 (SCL) |
-| IR receiver             | D9                  |
-| IMU status LED          | D13 (LED_BUILTIN)   |
-
-Channel A = right wheel, channel B = left wheel. Direction logic: IN1=H/IN2=L → forward, IN1=L/IN2=H → reverse.
-
-### IMU backend
-
-The IMU driver is abstracted behind a compile-time switch in
-`firmware-pio/src/IMU_backend_config.h`:
-
-- `IMU_BACKEND_ICM20948` (default) — uses Adafruit ICM20X, magnetometer available.
-- `IMU_BACKEND_MPU6500` — raw MPU6500 over I2C, gyro-only heading.
-
-## ROS workspace
-
-Build on the Jetson (or in the Jetson container):
+### Build the ROS workspace
 
 ```bash
 cd slam_ws
@@ -93,64 +225,79 @@ catkin_make
 source devel/setup.bash
 ```
 
-### Packages
-
-- **`robot_description`** — robot URDF (xacro), bringup/launch files, navigation
-  configs (point-to-point and explore modes), and the `cmd_vel_deadband` node.
-- **`jetson_arduino_bridge`** — `cmdvel_to_arduino.py` (Twist → serial → motors,
-  serial → odom/IMU publishers + TF) and `odom_imu_debug_view.py`.
-
-### Launch files (in `robot_description/launch/`)
-
-- `explore_mapping.launch` — full mapping/exploration stack (RTAB-Map + EKF +
-  move_base + optional explore_lite + deadband remapper).
-- `saved_map_nav.launch` — navigate a previously built map (localization mode).
-- `move_base_p2p.launch` / `move_base_explore.launch` — move_base configs.
-- `cmd_vel_deadband.launch` — run the remapper standalone for tuning.
-
-### Notable behaviors (in `cmd_vel_deadband`)
-
-- **Deadband remapping** — maps planner velocity ranges to the motor's usable
-  range, with separate curves for in-place turns vs. turn-while-driving.
-- **Pulsed in-place turns** (`pulsed_turn`) — duty-cycles rotation so SLAM
-  integrates clean scans between bursts (reduces map smearing).
-- **Settle before turn** (`settle_before_turn`) — stops for `settle_duration`
-  when switching from driving to an in-place turn, letting the camera settle.
-- **Continue map** (`continue_map`) — start from a fresh RTAB-Map database
-  (default) or resume the existing one.
-
-Example:
+### Mapping + Autonomous Exploration
 
 ```bash
 roslaunch robot_description explore_mapping.launch \
-  use_explore_lite:=true \
-  pulsed_turn:=true settle_before_turn:=true settle_duration:=1.5 \
-  continue_map:=true
+  use_explore_lite:=true
 ```
 
-## Docker environments
-
-`ros-for-laptop/` and `ros-for-jetson/` each contain a Dockerfile (ROS Melodic
-desktop-full + navigation/RealSense/avahi deps) and a run script. The run
-scripts are parameterized for the ROS network — override the hostnames via
-environment variables if your machines differ:
+### Saved-Map Point-to-Point Navigation
 
 ```bash
-ROS_MASTER_URI=http://jetson.local:11311 \
-ROS_HOSTNAME=laptop.local \
-./ros-for-laptop/run_my_image.bash
+roslaunch robot_description saved_map_nav.launch
 ```
 
-The catkin workspace (`slam_ws`) is bind-mounted into the container, so edits on
-the host are reflected immediately. On the Jetson, the run script also
-bind-mounts a CUDA workspace (`rs_cuda_ws`) and the Tegra libraries so the
-RealSense D435 runs with GPU/CUDA acceleration.
+Navigation goals can then be selected using 2D Nav Goal in RViz.
 
-## Configuration & tuning
+---
 
-- Nav configs live in `slam_ws/src/robot_description/config/`:
-  `explore_navigation/` (exploration) and `p2p_navigation/` (point-to-point).
-- If move_base reports oscillation during long pulsed turns, raise
-  `oscillation_timeout` in the relevant `move_base.yaml`.
-- RTAB-Map database is stored at `~/.ros/robot_rtabmap.db` by default
-  (configurable via the `database_path` arg).
+## Motion Tuning
+
+The physical drivetrain has a significant motor deadband, so planner output cannot be passed directly to the motors.
+
+A custom `cmd_vel_deadband` node maps ROS velocity commands into usable motor commands.
+
+It also supports pulsed in-place turns. Continuous fast rotation frequently caused RGB-D map smearing, so turning can instead be performed in short bursts with brief stationary periods between them.
+
+This improved RTAB-Map performance during autonomous exploration.
+
+---
+
+## Simulation
+
+<p align="center">
+  <img src="simulation_robot.png" width="600" alt="Custom robot simulation">
+</p>
+
+Simulation was used before full hardware deployment to validate:
+
+* SLAM
+* TF relationships
+* Saved-map localization
+* Costmaps
+* Point-to-point navigation
+* Autonomous exploration
+* Custom robot motion
+
+Development initially used a known reference robot before moving toward a custom Gazebo model representing the physical rover.
+
+---
+
+## Known Limitations
+
+The final system is a research/educational prototype rather than a production-ready autonomous robot.
+
+Some remaining limitations include:
+
+* Mapping quality degrades during aggressive motion.
+* RGB-D mapping performs best in well-lit environments.
+* Ghost obstacles can occasionally affect path planning.
+* Autonomous exploration is functional but not perfectly repeatable.
+* Point-to-point navigation depends strongly on map and localization quality.
+* Dynamic obstacle response is relatively slow.
+* Testing was limited to slow indoor operation.
+
+---
+
+## Authors
+
+**Team 56 — ELEC-4000 Capstone Design Project**
+
+**Ahmed Anwer**
+**Ammaar Najeeb Ahmed**
+
+Faculty Advisor: **Dr. Ning Zhang**
+
+Department of Electrical and Computer Engineering
+University of Windsor
