@@ -24,7 +24,7 @@ The final prototype demonstrated:
 ### Autonomous Exploration
 
 <p align="center">
-  <img src="exploration.gif" width="750" alt="Autonomous exploration demo">
+  <img src="exploration-readme.gif" width="750" alt="Autonomous exploration demo">
 </p>
 
 The rover uses Explore Lite to detect frontiers between known and unknown regions of the map and automatically sends navigation goals to `move_base`. As the robot explores, RTAB-Map continuously expands the occupancy grid and RGB-D reconstruction.
@@ -34,7 +34,7 @@ The rover uses Explore Lite to detect frontiers between known and unknown region
 ### Point-to-Point Navigation
 
 <p align="center">
-  <img src="nav.gif" width="750" alt="Point-to-point navigation demo">
+  <img src="nav-readme-small.gif" width="750" alt="Point-to-point navigation demo">
 </p>
 
 A previously generated RTAB-Map database can be loaded for localization. A destination is then selected in RViz and the robot plans and follows a path toward the goal while accounting for nearby obstacles.
