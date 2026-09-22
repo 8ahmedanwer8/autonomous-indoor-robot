@@ -260,17 +260,27 @@ This improved RTAB-Map performance during autonomous exploration.
   <img src="simulation_robot.png" width="600" alt="Custom robot simulation">
 </p>
 
-Simulation was used before full hardware deployment to validate:
+A separate ROS 2 Jazzy + Gazebo Harmonic simulation environment was developed to validate the autonomy stack before and alongside hardware testing.
 
-* SLAM
+The simulation was used to test:
+
+* Custom mobile-robot modeling in Gazebo
+* LiDAR, RGB-D camera, and IMU integration
+* EKF-based filtered odometry
+* RTAB-Map SLAM
 * TF relationships
-* Saved-map localization
 * Costmaps
-* Point-to-point navigation
-* Autonomous exploration
-* Custom robot motion
+* Nav2 point-to-point navigation
+* Obstacle-aware replanning
+* Autonomous frontier exploration with Explore Lite
 
-Development initially used a known reference robot before moving toward a custom Gazebo model representing the physical rover.
+Development initially used a known reference environment before moving to a custom two-room Gazebo world and custom Elegoo robot model.
+
+The complete simulation configuration, launch files, navigation parameters, exploration parameters, custom world, and validation screenshots are available here:
+
+**[View the ROS 2 Simulation Documentation](simulation/README.md)**
+
+The simulation results show the full progression from Gazebo setup and RTAB-Map mapping to Nav2 navigation and autonomous exploration.
 
 ---
 
